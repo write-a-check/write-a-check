@@ -1,0 +1,7 @@
+vue3/public/enc.js
+vue3/node_modules
+solidity/build
+*.swp
+*.log
+vue3/public/ethers-5.4.6.umd.min.js
+*.swo
