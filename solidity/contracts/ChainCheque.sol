@@ -14,27 +14,34 @@ struct Cheque {
 }
 
 contract ChainCheque {
-	mapping(address => mapping(uint => Cheque)) chequeMap;
+	mapping(uint => Cheque) chequeMap;
 	mapping(address => uint) encryptionPubkeys;
 
 	event NewCheque(address indexed payee, uint indexed id, uint coinTypeAndAmount,
 			uint drawerAndDeadline, bytes32 passphraseHash, bytes memo);
-	event RemoveCheque(address indexed payee, uint indexed id, bool accepted);
+	event RevokeCheque(address indexed payee, uint indexed id);
+	event AcceptCheque(address indexed payee, uint indexed id);
+	event RefuseCheque(address indexed payee, uint indexed id);
 	event SetEncryptionPubkey(address indexed payee, uint key);
 	event UnsetEncryptionPubkey(address indexed payee);
 
 	address constant SEP206Contract = address(bytes20(uint160(0x2711)));
 
-	function getCheque(address payee, uint id) private view returns (Cheque memory cheque) {
-		cheque = chequeMap[payee][id];
+	function getCheque(uint id) private view returns (Cheque memory cheque) {
+		cheque = chequeMap[id];
 	}
 
-	function saveCheque(address payee, uint id, Cheque memory cheque) internal {
-		chequeMap[payee][id] = cheque;
+	function hasCheque(uint id) private view returns (bool) {
+		Cheque memory cheque = chequeMap[id];
+		return cheque.deadline != 0;
 	}
 
-	function deleteCheque(address payee, uint id) internal {
-		delete chequeMap[payee][id];
+	function saveCheque(uint id, Cheque memory cheque) internal {
+		chequeMap[id] = cheque;
+	}
+
+	function deleteCheque(uint id) internal {
+		delete chequeMap[id];
 	}
 
 	function safeTransfer(address coinType, address receiver, uint value) private {
@@ -47,14 +54,14 @@ contract ChainCheque {
 
 // =====================================================================================================
 
-	function getChequeContent(address payee, uint id) external view returns (
+	function getChequeContent(uint id) external view returns (
 								address coinType,
 								uint96 amount,
 								address drawer,
 								uint64 deadline,
 								bytes32 passphraseHash) {
 
-		Cheque memory cheque = getCheque(payee, id);
+		Cheque memory cheque = getCheque(id);
 		coinType = cheque.coinType;
 		amount = cheque.amount;
 		drawer = cheque.drawer;
@@ -73,7 +80,6 @@ contract ChainCheque {
 	}
 
 	function writeCheque(address payee, 
-			uint id, 
 			address coinType,
 			uint96 amount,
 			uint64 deadline,
@@ -81,8 +87,11 @@ contract ChainCheque {
 			bytes calldata memo) external payable {
 		require(deadline > block.timestamp, "invalid-deadline");
 		require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
-		Cheque memory cheque = getCheque(payee, id);
-		require(cheque.deadline == 0, "cheque-already-exists");
+		uint id = uint(uint160(bytes20(payee))) | (block.number<<32);
+		while(hasCheque(id)) { //find an unused id
+			id++;
+		}
+		Cheque memory cheque;
 		cheque.drawer = msg.sender;
 		cheque.deadline = deadline;
 		cheque.coinType = coinType;
@@ -98,23 +107,32 @@ contract ChainCheque {
 			realAmount = newBalance - oldBalance;
 		}
 		cheque.amount = uint96(realAmount);
-		saveCheque(payee, id, cheque);
+		saveCheque(id, cheque);
 		uint coinTypeAndAmount = (uint(uint160(bytes20(coinType)))<<96) | uint(amount);
 		uint drawerAndDeadline = (uint(uint160(bytes20(msg.sender)))<<64) | uint(deadline);
 		emit NewCheque(payee, id, coinTypeAndAmount, drawerAndDeadline, passphraseHash, memo);
 	}
 
 	function revokeCheque(address payee, uint id) external {
-		Cheque memory cheque = getCheque(payee, id);
+		Cheque memory cheque = getCheque(id);
 		require(cheque.deadline != 0, "cheque-not-exists");
 		require(cheque.deadline < block.timestamp, "still-before-deadline");
-		deleteCheque(payee, id);
+		deleteCheque(id);
 		safeTransfer(cheque.coinType, cheque.drawer, uint(cheque.amount));
-		emit RemoveCheque(payee, id, false);
+		emit RevokeCheque(payee, id);
 	}
 
-	function receiveCheque(uint id, bool accept, bytes calldata passphrase) external {
-		Cheque memory cheque = getCheque(msg.sender, id);
+	function acceptCheque(uint id, bytes calldata passphrase) external {
+		receiveCheque(id, true, passphrase);
+	}
+
+	function refuseCheque(uint id) external {
+		receiveCheque(id, false, new bytes(0));
+	}
+
+	function receiveCheque(uint id, bool accept, bytes memory passphrase) internal {
+		require(uint(uint160(bytes20(msg.sender))) == (id>>96), "not-payee");
+		Cheque memory cheque = getCheque(id);
 		require(cheque.deadline != 0, "cheque-not-exists");
 		require(block.timestamp <= cheque.deadline, "after-deadline");
 		address receiver = msg.sender;
@@ -123,12 +141,13 @@ contract ChainCheque {
 				bytes32 hash = keccak256(passphrase);
 				require(hash==cheque.passphraseHash, "wrong-passphrase");
 			}
+			emit AcceptCheque(msg.sender, id);
 		} else {
 			receiver = cheque.drawer;
+			emit RefuseCheque(msg.sender, id);
 		}
-		deleteCheque(msg.sender, id);
+		deleteCheque(id);
 		safeTransfer(cheque.coinType, receiver, uint(cheque.amount));
-		emit RemoveCheque(msg.sender, id, accept);
 	}
 }
 
