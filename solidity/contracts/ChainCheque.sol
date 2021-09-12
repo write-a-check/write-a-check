@@ -87,7 +87,8 @@ contract ChainCheque {
 			bytes calldata memo) external payable {
 		require(deadline > block.timestamp, "invalid-deadline");
 		require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
-		uint id = uint(uint160(bytes20(payee))) | (block.number<<32);
+		uint senderAsU256 = uint(uint160(bytes20(msg.sender)));
+		uint id = uint(uint160(bytes20(payee))) | (block.number<<32) | uint(uint32(senderAsU256));
 		while(hasCheque(id)) { //find an unused id
 			id++;
 		}
@@ -109,7 +110,7 @@ contract ChainCheque {
 		cheque.amount = uint96(realAmount);
 		saveCheque(id, cheque);
 		uint coinTypeAndAmount = (uint(uint160(bytes20(coinType)))<<96) | uint(amount);
-		uint drawerAndDeadline = (uint(uint160(bytes20(msg.sender)))<<64) | uint(deadline);
+		uint drawerAndDeadline = (senderAsU256<<64) | uint(deadline);
 		emit NewCheque(payee, id, coinTypeAndAmount, drawerAndDeadline, passphraseHash, memo);
 	}
 
