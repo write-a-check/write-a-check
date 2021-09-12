@@ -122,6 +122,19 @@ contract ChainCheque {
 		emit RevokeCheque(payee, id);
 	}
 
+	function acceptCheques(uint[] calldata idList, bytes calldata passphrase) external {
+		for(uint i=0; i<idList.length; i++) {
+			receiveCheque(idList[i], true, passphrase);
+		}
+	}
+
+	function refuseCheques(uint[] calldata idList) external {
+		bytes memory zeroLenBz = new bytes(0);
+		for(uint i=0; i<idList.length; i++) {
+			receiveCheque(idList[i], false, zeroLenBz);
+		}
+	}
+
 	function acceptCheque(uint id, bytes calldata passphrase) external {
 		receiveCheque(id, true, passphrase);
 	}
