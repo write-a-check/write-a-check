@@ -10,15 +10,15 @@ struct Cheque {
 	address drawer;
 	uint64 deadline;
 
-	bytes32 passphraseHash;
+	uint passphraseHash;
 }
 
 contract ChainCheque {
 	mapping(uint => Cheque) chequeMap;
-	mapping(address => uint) encryptionPubkeys;
+	mapping(address => uint) public encryptionPubkeys;
 
 	event NewCheque(address indexed payee, uint indexed id, uint coinTypeAndAmount,
-			uint drawerAndDeadline, bytes32 passphraseHash, bytes memo);
+			uint drawerAndDeadline, uint passphraseHash, bytes memo);
 	event RevokeCheque(address indexed payee, uint indexed id);
 	event AcceptCheque(address indexed payee, uint indexed id);
 	event RefuseCheque(address indexed payee, uint indexed id);
@@ -59,7 +59,7 @@ contract ChainCheque {
 								uint96 amount,
 								address drawer,
 								uint64 deadline,
-								bytes32 passphraseHash) {
+								uint passphraseHash) {
 
 		Cheque memory cheque = getCheque(id);
 		coinType = cheque.coinType;
@@ -83,7 +83,7 @@ contract ChainCheque {
 			address coinType,
 			uint96 amount,
 			uint64 deadline,
-			bytes32 passphraseHash,
+			uint passphraseHash,
 			bytes calldata memo) external payable {
 		require(deadline > block.timestamp, "invalid-deadline");
 		require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
@@ -137,9 +137,10 @@ contract ChainCheque {
 		require(block.timestamp <= cheque.deadline, "after-deadline");
 		address receiver = msg.sender;
 		if(accept) {
-			if(cheque.passphraseHash != 0) {
+			//check passphrase if it is not a hashtag
+			if(uint8(cheque.passphraseHash) != 35) { // ascii of '#' is 35
 				bytes32 hash = keccak256(passphrase);
-				require(hash==cheque.passphraseHash, "wrong-passphrase");
+				require((uint(hash)>>8) == (cheque.passphraseHash>>8), "wrong-passphrase");
 			}
 			emit AcceptCheque(msg.sender, id);
 		} else {
