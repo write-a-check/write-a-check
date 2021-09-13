@@ -88,8 +88,8 @@ contract ChainCheque {
 		require(deadline > block.timestamp, "invalid-deadline");
 		require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
 		uint senderAsU256 = uint(uint160(bytes20(msg.sender)));
-		uint id = uint(uint160(bytes20(payee))) | (block.number<<32) | uint(uint32(senderAsU256));
-		while(hasCheque(id)) { //find an unused id
+		uint id = uint(uint160(bytes20(payee))) | (block.number<<32) | (uint(uint24(senderAsU256))<<8);
+		while(hasCheque(id)) { //to find an unused id
 			id++;
 		}
 		Cheque memory cheque;
@@ -114,13 +114,19 @@ contract ChainCheque {
 		emit NewCheque(payee, id, coinTypeAndAmount, drawerAndDeadline, passphraseHash, memo);
 	}
 
-	function revokeCheque(address payee, uint id) external {
+	function revokeCheques(uint[] calldata idList) external {
+		for(uint i=0; i<idList.length; i++) {
+			revokeCheque(idList[i]);
+		}
+	}
+
+	function revokeCheque(uint id) public {
 		Cheque memory cheque = getCheque(id);
 		require(cheque.deadline != 0, "cheque-not-exists");
 		require(cheque.deadline < block.timestamp, "still-before-deadline");
 		deleteCheque(id);
 		safeTransfer(cheque.coinType, cheque.drawer, uint(cheque.amount));
-		emit RevokeCheque(payee, id);
+		emit RevokeCheque(address(uint160(id>>96)), id);
 	}
 
 	function acceptCheques(uint[] calldata idList, bytes calldata passphrase) external {
