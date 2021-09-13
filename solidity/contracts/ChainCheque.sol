@@ -17,8 +17,8 @@ contract ChainCheque {
 	mapping(uint => Cheque) chequeMap;
 	mapping(address => uint) public encryptionPubkeys;
 
-	event NewCheque(address indexed payee, uint indexed id, uint coinTypeAndAmount,
-			uint drawerAndDeadline, uint passphraseHash, bytes memo);
+	event NewCheque(address indexed payee, uint indexed id, address indexed drawer,
+			uint coinTypeAndAmount, uint startAndEndTime, uint passphraseHash, bytes memo);
 	event RevokeCheque(address indexed payee, uint indexed id);
 	event AcceptCheque(address indexed payee, uint indexed id);
 	event RefuseCheque(address indexed payee, uint indexed id);
@@ -144,8 +144,8 @@ contract ChainCheque {
 		cheque.amount = realAmount;
 		saveCheque(id, cheque);
 		uint coinTypeAndAmount = (uint(uint160(bytes20(coinType)))<<96) | uint(realAmount);
-		uint drawerAndDeadline = (senderAsU256<<64) | uint(deadline);
-		emit NewCheque(payee, id, coinTypeAndAmount, drawerAndDeadline, passphraseHash, memo);
+		uint startAndEndTime = (block.timestamp<<64) | uint(deadline);
+		emit NewCheque(payee, id, msg.sender, coinTypeAndAmount, startAndEndTime, passphraseHash, memo);
 	}
 
 	function revokeCheques(uint[] calldata idList) external {
