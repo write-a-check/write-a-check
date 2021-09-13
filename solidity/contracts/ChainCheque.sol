@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.6;
 
 import "./IERC20.sol";
@@ -79,13 +79,57 @@ contract ChainCheque {
 		emit UnsetEncryptionPubkey(msg.sender);
 	}
 
-	function writeCheque(address payee, 
+	function writeCheques(address[] calldata payeeList,
+			address coinType,
+			uint96 amount,
+			uint64 deadline,
+			uint[] calldata passphraseHashList,
+			bytes[] calldata memoList) external payable {
+		require(payeeList.length == passphraseHashList.length &&
+		        payeeList.length == memoList.length, "length-mismatch");
+		require(deadline > block.timestamp, "invalid-deadline");
+		uint realAmount = uint(amount);
+		if(coinType == SEP206Contract) {
+			require(msg.value == uint(amount)*payeeList.length, "value-mismatch");
+		} else {
+			require(msg.value == 0, "dont-send-bch");
+			uint oldBalance = IERC20(coinType).balanceOf(address(this));
+			IERC20(coinType).transferFrom(msg.sender, address(this), uint(amount*payeeList.length));
+			uint newBalance = IERC20(coinType).balanceOf(address(this));
+			realAmount = (newBalance - oldBalance) / payeeList.length;
+		}
+		for(uint i=0; i<payeeList.length; i++) {
+			_writeCheque(payeeList[i], coinType, uint96(realAmount), deadline,
+				     passphraseHashList[i], memoList[i]);
+		}
+	}
+
+	function writeCheque(address payee,
 			address coinType,
 			uint96 amount,
 			uint64 deadline,
 			uint passphraseHash,
 			bytes calldata memo) external payable {
 		require(deadline > block.timestamp, "invalid-deadline");
+		uint realAmount = uint(amount);
+		if(coinType == SEP206Contract) {
+			require(msg.value == uint(amount), "value-mismatch");
+		} else {
+			require(msg.value == 0, "dont-send-bch");
+			uint oldBalance = IERC20(coinType).balanceOf(address(this));
+			IERC20(coinType).transferFrom(msg.sender, address(this), uint(amount));
+			uint newBalance = IERC20(coinType).balanceOf(address(this));
+			realAmount = newBalance - oldBalance;
+		}
+		_writeCheque(payee, coinType, uint96(realAmount), deadline, passphraseHash, memo);
+	}
+
+	function _writeCheque(address payee, 
+			address coinType,
+			uint96 realAmount,
+			uint64 deadline,
+			uint passphraseHash,
+			bytes calldata memo) internal {
 		require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
 		uint senderAsU256 = uint(uint160(bytes20(msg.sender)));
 		uint id = uint(uint160(bytes20(payee))) | (block.number<<32) | (uint(uint24(senderAsU256))<<8);
@@ -97,19 +141,9 @@ contract ChainCheque {
 		cheque.deadline = deadline;
 		cheque.coinType = coinType;
 		cheque.passphraseHash = passphraseHash;
-		uint realAmount = uint(amount);
-		if(cheque.coinType == SEP206Contract) {
-			require(msg.value == uint(amount), "value-mismatch");
-		} else {
-			require(msg.value == 0, "dont-send-bch");
-			uint oldBalance = IERC20(cheque.coinType).balanceOf(address(this));
-			IERC20(cheque.coinType).transferFrom(msg.sender, address(this), uint(amount));
-			uint newBalance = IERC20(cheque.coinType).balanceOf(address(this));
-			realAmount = newBalance - oldBalance;
-		}
-		cheque.amount = uint96(realAmount);
+		cheque.amount = realAmount;
 		saveCheque(id, cheque);
-		uint coinTypeAndAmount = (uint(uint160(bytes20(coinType)))<<96) | uint(amount);
+		uint coinTypeAndAmount = (uint(uint160(bytes20(coinType)))<<96) | uint(realAmount);
 		uint drawerAndDeadline = (senderAsU256<<64) | uint(deadline);
 		emit NewCheque(payee, id, coinTypeAndAmount, drawerAndDeadline, passphraseHash, memo);
 	}
