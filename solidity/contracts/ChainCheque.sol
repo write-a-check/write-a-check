@@ -22,7 +22,7 @@ contract ChainCheque {
 	event RevokeCheque(address indexed payee, uint indexed id);
 	event AcceptCheque(address indexed payee, uint indexed id);
 	event RefuseCheque(address indexed payee, uint indexed id);
-	event SetEncryptionPubkey(address indexed payee, uint key);
+	event SetEncryptionPubkey(address indexed payee, address referee, uint key);
 	event UnsetEncryptionPubkey(address indexed payee);
 
 	address constant SEP206Contract = address(bytes20(uint160(0x2711)));
@@ -69,9 +69,9 @@ contract ChainCheque {
 		passphraseHash = cheque.passphraseHash;
 	}
 
-	function setEncryptionPubkey(uint key) external {
+	function setEncryptionPubkey(uint key, address referee) external {
 		encryptionPubkeys[msg.sender] = key;
-		emit SetEncryptionPubkey(msg.sender, key);
+		emit SetEncryptionPubkey(msg.sender, referee, key);
 	}
 
 	function unsetEncryptionPubkey() external {
