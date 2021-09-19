@@ -4,6 +4,7 @@ import Receive from '../views/Receive.vue'
 import Write from '../views/Write.vue'
 const routes = [
   { path: "/", component: Home },
+  { path: "/refer/:refereeAddr", component: Home },
   { path: "/write", component: Write },
   { path: "/receive", component: Receive }]
 

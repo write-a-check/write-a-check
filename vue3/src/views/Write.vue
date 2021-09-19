@@ -1,27 +1,26 @@
 <template>
-  <h1>Write a Check</h1>
   <div class="normal">
    <table style="margin: auto; border-spacing: 15px;">
-   <tr><td><b>SEP20 Token's Address</b><br/>
-   (Click <button @click="useBCH">here</button> if you want to send BCH)</td>
-   <td><input v-model="sep20Address" type="text" placeholder="Please enter an address in HEX format"></td></tr>
-   <tr><td><b>Amount Sent to the Payee</b></td>
+   <tr><td><b>Token's Address or Symbol</b><br/>
+   (Click <button @click="useBCH">here</button> if sending BCH)</td>
+   <td><input v-model="sep20Address" type="text" placeholder="Please enter an SEP20 token's address or symbol"></td></tr>
+   <tr><td><b>Payees' Addresses</b><br/>You can also paste any text in the right text area, and
+   click <button @click="extract">extract</button> to extract addresses from it.</td>
+   <td><textarea v-model="addressList" placeholder="Please enter addresses in HEX format. One address in a line" rows="6" cols="40"></textarea></td></tr>
+   <tr><td><b>Amount Sent to Each Payee</b></td>
    <td><input v-model="amount" type="number" placeholder="Please enter a number"></td></tr>
-   <tr><td><b>Passphrase</b><br/>
-   (The payee must enter this passphrase to get paid)</td>
+   <tr><td><b>Deadline</b></td>
+   <td><input v-model="deadline" type="datetime-local"></td></tr>
+   <tr><td><b>Passphrase or Hashtag</b><br/>
+   (A hashtag begins with "#", and a passphrase does not)</td>
    <td><input v-model="passphrase" type="text"
-   placeholder="Leave here black if passpharse isn't needed"></td></tr>
+   placeholder="Leave here black if passphrase or hashtag isn't needed"></td></tr>
    <tr><td><b>Memo</b><br/>
    (It will be encrypted by the payee's public key and only the payee can decrypt)</td>
    <td><textarea v-model="memo" placeholder="Please enter some text to explain what is the purpose of this check." rows="10" cols="40"></textarea></td></tr>
    </table>
    <div style="margin: auto; width: 40%"><br/>
    <button @click="submit" style="font-size: 24px; width: 300px">Submit</button></div>
-    <!--
-    <p><button @click="queryEvent">queryEvent</button></p>
-    <p><button @click="deployLogic">deployLogic</button></p>
-    <p><button @click="deployFactory">deployFactory</button></p>
-    -->
   </div>
 </template>
 
@@ -39,89 +38,155 @@ button {
 </style>
 
 <script>
-const FactoryABI = [
-  "function create(bytes memo) external",
-  "event MemoContractCreated(address indexed owner, address indexed addr)"]
+function genRand() {
+      var arr = new Uint8Array(12)
+      window.crypto.getRandomValues(arr)
+      return ethers.utils.base64.encode(arr)
+}
 
-async function deploy(bytecode) {
-  const abi = [ "constructor() public" ];
-  
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
-  try {
-    const signer = provider.getSigner()
-    const factory = new ethers.ContractFactory(abi, bytecode, signer)
-    const contract = await factory.deploy();
-    console.log("address:", contract.address)
-    const receipt = await contract.deployTransaction.wait();
-    console.log(receipt)
-  } catch(e) {
-    alert("Error! "+e.toString())
+function extractAddrList(text, sep20Address) {
+  var entries = text.split("0x")
+  var addrSet = {}
+  for(let entry of entries) {
+    if(entry.length < 40) {
+      continue
+    }
+    try {
+      const addr = ethers.utils.getAddress("0x"+entry.substr(0,40))
+      addrSet[addr] = true
+    } catch(e) {
+      console.log(e)
+    }
   }
+  delete addrSet[sep20Address]
+  var coins = Object.keys(addrSet)
+  coins.sort()
+  return coins.join("\n")
 }
 
-async function getPublicKey() {
-  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-  const encryptionPublicKey = await window.ethereum.request({
-    method: 'eth_getEncryptionPublicKey',
-    params: [accounts[0]]
-  })
-  return encryptionPublicKey
+function uint8ArrayToHex(buffer) {
+  return Array.prototype.map.call(buffer, x => x.toString(16).padStart(2, '0')).join('');
 }
 
-async function encryptMsg(msg) {
-  const encryptionPublicKey = await getPublicKey()
-  //const hex = base64ToHex(encryptionPublicKey)
-  //alert("encryptionPublicKey "+hex.length+" "+hex)
-  return encryptMsgWithKey(msg, encryptionPublicKey)
+function strToBytes32Hex(s) {
+  const encoder = new TextEncoder()
+  const encData = encoder.encode(s)
+  const hex = uint8ArrayToHex(encData)
+  return "0x"+hex+("0".repeat(64-hex.length))
 }
 
 export default {
   data() {
     return {
+      sep20Address: "",
+      payeeAddress: "",
+      amount: 0,
+      passphrase: "",
+      deadline: "",
       memo: ""
     }
   },
   methods: {
-    async deployLogic() {
-      await deploy(window.logicBytecode)
+    extract() {
+       this.addressList = extractAddrList(this.addressList, this.sep20Address)
     },
-    async deployFactory() {
-      await deploy(window.factoryBytecode)
+    useBCH() {
+       this.sep20Address = "0x0000000000000000000000000000000000002711"
     },
-    async queryEvent() {
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const facContract = new ethers.Contract(FactoryAddress, FactoryABI, provider)
-      const filter = facContract.filters.MemoContractCreated(null, null)
-      console.log(await facContract.queryFilter(filter))
-    },
-    async save() {
+    async submit() {
       if (typeof window.ethereum === 'undefined') {
         alertNoWallet()
         return
       }
-      if (this.memo.length == 0) {
-        alert("You have not written any memo yet")
-	return
-      }
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
-      const myMemoAddress = getMyContract(await signer.getAddress())
-      const code = await provider.getCode(myMemoAddress)
-      //const encoder = new TextEncoder()
-      //const fullMemo = encoder.encode((new Date()).toISOString() + " " + this.memo)
-      const fullMemo = await encryptMsg((new Date()).toISOString() + " " + this.memo)
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice=="0x") {
-        gasPrice = "0x0"
+      const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
+
+      var payeeList = [];
+      var encPubkeyList = [];
+      const addressList = this.addressList.split("\n")
+      for(var i=0; i<addressList.length; i++) {
+        try {
+          const payee = ethers.utils.getAddress(addressList[i].trim())
+          const encPubkey = await chequeContract.encryptionPubkeys(payee)
+          if(encPubkey == 0) {
+            alert("The payee ${payee} is refusing checks. Will ignore it.")
+          } else {
+	    payeeList.push(payee)
+            encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
+	  }
+        } catch(e) {
+          alert("Invalid Payee's Address: "+addressList[i])
+          return
+        }
       }
-      if(code.length <= 2) { //contract not created
-        const facContract = new ethers.Contract(FactoryAddress, FactoryABI, provider)
-        const receipt = await facContract.connect(signer).create(fullMemo, {gasPrice: gasPrice})
+
+      const [coinType, symbol] = await getSEP20AddrAndSymbol(this.sep20Address)
+      if(coinType === null) {
+        return
+      }
+
+      var balance;
+      const sep20Contract = new ethers.Contract(coinType, SEP20ABI, provider)
+      try {
+	const balanceAmt = await sep20Contract.balanceOf(signer.getAddress())
+        const decimals = await sep20Contract.decimals()
+        balance = ethers.utils.formatUnits(balanceAmt, decimals)
+      } catch(e) {
+        alert("Not an SEP20 Address: "+coinType)
+	return
+      }
+
+      if(balance < this.amount*payeeList.length) {
+        alert("You do not own enough ${symbol} to send! ${payeeList.length} payees needs ${this.amount*payeeList.length} and you only have ${balance}")
+      }
+
+      const sendAmt = ethers.utils.parseUnits(this.amount.toString(), decimals)
+
+      const deadlineTimestamp = new Date(this.deadline).getTime() / 1000
+
+      var hasHashTag = this.passphrase.startsWith("#")
+      var hasPassphrase = this.passphrase.length != 0 && !hasHashTag
+      var passphraseHashList = []
+      var memoEncList = []
+      for(var i=0; i<payeeList.length; i++) {
+        var memo = this.memo
+        memoEncList.push(encryptMsgWithKey(memo, encPubkeyList[i]))
+        if(hasHashTag) {
+          try {
+            passphraseHashList.push(strToBytes32Hex(this.passphrase))
+          } catch(e) {
+            alert('Hashtag "'+this.passphrase+'" is too long')
+            return
+          }
+        } else if(hasPassphrase) {
+          const salt = genRand()
+          passphraseHashList.push(ethers.utils.keccak256(salt+this.passphrase))
+          memo = salt+""+memo
+        } else {
+          passphraseHashList.push(ethers.utils.parseUnits(0))
+        }
+        memoEncList.push(encryptMsgWithKey(memo, encPubkeyList[i]))
+      }
+      //var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
+      //if(gasPrice == "0x") {
+      //  gasPrice = "0x0"
+      //}
+      if(payeeList.length == 1) {
+        await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
+	                passphraseHashList[0], memoEncList[0]/*, {gasPrice: gasPrice}*/)
       } else {
-        const memoContract = new ethers.Contract(myMemoAddress, MemoABI, provider)
-        await memoContract.connect(signer).addMemo(fullMemo, {gasPrice: gasPrice}) 
+        await chequeContract.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
+			passphraseHashList, memoEncList/*, {gasPrice: gasPrice}*/)
       }
     },
+  },
+  async mounted() {
+    var deadline = new Date()
+    var t = deadline.getTime() + 7 * 24 * 3600 * 1000
+    deadline.setTime(t)
+    deadline.setMinutes(deadline.getMinutes() - deadline.getTimezoneOffset())
+    this.deadline = deadline.toISOString().slice(0,16)
   }
 }
 </script>
