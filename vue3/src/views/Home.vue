@@ -5,15 +5,13 @@
     <p>With this DApp, you can <a @click="read" href="">write a check</a> to a payee.</p>
     <p>This is a <a href="https://www.puredapp.org">Pure DApp</a>, which means its contract code and front-end code are both opensource and anyone can deploy them at anywhere.</p>
     <p v-if="allowed"><b>Currently, you have allowed checks sent to you.
-    You can <button @click="refuse" href="">refuse</button> further incoming checks.</b></p>
+    You can <button @click="refuse" href="">refuse</button> further incoming checks. ${{myAddress}} is your current account.</b></p>
     <p v-else><b>Currently, you have not allowed checks sent to you.
-    You can <button @click="allow" href="">allow</button> incoming checks now.</b></p>
+    You can <button @click="allow" href="">allow</button> incoming checks now. ${{myAddress}} is your current account.</b></p>
     <p>Together with the check, this DApp can send a memo encrypted with your public key, which can only be decrypted with the payee's private key, such that no other people can know the content.</p>
     <p>As an enhancement to the traditional paper check, you can add a passphrase or a hashtag to your check. After received a check with passphrase, the payee must enter the correct passphrase to get paid. You can send the passphrase to the payee with e-mail or IM Apps. A hashtag is just hints the usage of the check, and it does not require the payee to do anything. A hashtag begins with "#", and a passphrase does not.</p>
     <p><b>CAVEAT:</b> This is an opensource software. It is provided “as is”, without warranty of any kind. Please use it <b>AT YOUR OWN RISK</b>.</p>
-    <!--
     <p><button @click="deployLogic">deployLogic</button></p>
-    -->
   </div>
 </template>
 
@@ -46,7 +44,7 @@ async function getPublicKey() {
 }
 
 
-async function switchAllow(allowed) {
+async function switchAllow(allowed, referee = null) {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
@@ -54,27 +52,25 @@ async function switchAllow(allowed) {
       //if(gasPrice=="0x") {
       //  gasPrice = "0x0"
       //}
+      var receipt
       if(allowed) {
         const key = await getPublicKey()
         const keyHex = base64ToHex(key)
-	var referee = "0x0000000000000000000000000000000000000000"
-        if(this.$route.params.has("refereeAddr") && this.$route.params.refereeAddr.length != 0) {
-	  try {
-	    referee = ethers.utils.getAddress(this.$route.params.refereeAddr)
-	  } catch (e) {
-	    alert(this.$route.params.refereeAddr+" is not an valid address for referee.")
-	    return
-	  }
-        }
-        await chequeContract.setEncryptionPubkey("0x"+keyHex, referee)
+	if(referee === null) {
+	  referee = "0x0000000000000000000000000000000000000000"
+	}
+	console.log("referee",referee)
+        receipt = await chequeContract.setEncryptionPubkey("0x"+keyHex, referee)
       } else {
-        await chequeContract.unsetEncryptionPubkey()
+        receipt = await chequeContract.unsetEncryptionPubkey()
       }
+      console.log("receipt", receipt)
 }
 export default {
   name: 'Home',
   data() {
     return {
+      myAddress: "",
       allowed: false
     }
   },
@@ -83,7 +79,19 @@ export default {
       await deploy(window.chequeBytecode)
     },
     async allow() {
-      switchAllow(true)
+      var referee = "0x0000000000000000000000000000000000000000"
+      console.log(this.$route)
+      console.log(this.$route.params)
+      console.log(this.$route.params.refereeAddr)
+      if(this.$route.params.refereeAddr && this.$route.params.refereeAddr.length != 0) {
+	try {
+	  referee = ethers.utils.getAddress(this.$route.params.refereeAddr)
+	} catch (e) {
+	  alert(this.$route.params.refereeAddr+" is not an valid address for referee.")
+	  return
+	}
+      }
+      switchAllow(true, referee)
     },
     async refuse() {
       switchAllow(false)
@@ -105,9 +113,9 @@ export default {
     }
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     const signer = provider.getSigner()
-    const myAddress = await signer.getAddress()
+    this.myAddress = await signer.getAddress()
     const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-    const encPubkey = await chequeContract.encryptionPubkeys(myAddress)
+    const encPubkey = await chequeContract.encryptionPubkeys(this.myAddress)
     this.allowed = (encPubkey != 0)
     console.log(ethers.utils.base64.encode(encPubkey))
   }

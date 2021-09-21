@@ -64,17 +64,6 @@ function extractAddrList(text, sep20Address) {
   return coins.join("\n")
 }
 
-function uint8ArrayToHex(buffer) {
-  return Array.prototype.map.call(buffer, x => x.toString(16).padStart(2, '0')).join('');
-}
-
-function strToBytes32Hex(s) {
-  const encoder = new TextEncoder()
-  const encData = encoder.encode(s)
-  const hex = uint8ArrayToHex(encData)
-  return "0x"+hex+("0".repeat(64-hex.length))
-}
-
 export default {
   data() {
     return {
@@ -83,6 +72,7 @@ export default {
       amount: 0,
       passphrase: "",
       deadline: "",
+      addressList: [],
       memo: ""
     }
   },
@@ -110,7 +100,7 @@ export default {
           const payee = ethers.utils.getAddress(addressList[i].trim())
           const encPubkey = await chequeContract.encryptionPubkeys(payee)
           if(encPubkey == 0) {
-            alert("The payee ${payee} is refusing checks. Will ignore it.")
+            alert("The payee "+payee+" is refusing checks. Will ignore it.")
           } else {
 	    payeeList.push(payee)
             encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
@@ -126,19 +116,37 @@ export default {
         return
       }
 
-      var balance;
+      var balance, decimals, allowance;
       const sep20Contract = new ethers.Contract(coinType, SEP20ABI, provider)
       try {
 	const balanceAmt = await sep20Contract.balanceOf(signer.getAddress())
-        const decimals = await sep20Contract.decimals()
+	const allowanceAmt = await sep20Contract.allowance(signer.getAddress(), ChequeContractAddress)
+        decimals = await sep20Contract.decimals()
         balance = ethers.utils.formatUnits(balanceAmt, decimals)
+	allowance = ethers.utils.formatUnits(allowanceAmt, decimals)
       } catch(e) {
         alert("Not an SEP20 Address: "+coinType)
 	return
       }
 
-      if(balance < this.amount*payeeList.length) {
-        alert("You do not own enough ${symbol} to send! ${payeeList.length} payees needs ${this.amount*payeeList.length} and you only have ${balance}")
+      //var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
+      //if(gasPrice == "0x") {
+      //  gasPrice = "0x0"
+      //}
+
+      var totalAmount = this.amount*payeeList.length
+      if(balance < totalAmount) {
+        alert("You do not own enough "+symbol+" to send! "+payeeList.length+" payees needs "+totalAmount+" and you only have "+balance)
+        return
+      }
+      if(allowance < totalAmount) {
+        const ok = confirm("You haven't approve enough "+symbol+" to this DApp. "+payeeList.length+" payees needs "+totalAmount+" and you only approved "+allowance+". Do you want to approve now?")
+	if(ok) {
+	  const maxAmount = "0x0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+	  alert("Transaction for approving will be sent. Please retry after it succeeds.")
+          sep20Contract.connect(signer).approve(ChequeContractAddress, maxAmount/*, {gasPrice: gasPrice}*/)
+	}
+	return
       }
 
       const sendAmt = ethers.utils.parseUnits(this.amount.toString(), decimals)
@@ -151,27 +159,26 @@ export default {
       var memoEncList = []
       for(var i=0; i<payeeList.length; i++) {
         var memo = this.memo
-        memoEncList.push(encryptMsgWithKey(memo, encPubkeyList[i]))
         if(hasHashTag) {
-          try {
-            passphraseHashList.push(strToBytes32Hex(this.passphrase))
-          } catch(e) {
+	  const hex = strToBytes32Hex(this.passphrase)
+          if(hex.length<=66) {
+            passphraseHashList.push(hex)
+          } else {
             alert('Hashtag "'+this.passphrase+'" is too long')
             return
           }
         } else if(hasPassphrase) {
           const salt = genRand()
-          passphraseHashList.push(ethers.utils.keccak256(salt+this.passphrase))
+	  var hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(salt+this.passphrase))
+	  hash = "0x00"+hash.substr(4) // force the highest byte to be zero
+          passphraseHashList.push(hash)
           memo = salt+""+memo
         } else {
           passphraseHashList.push(ethers.utils.parseUnits(0))
         }
-        memoEncList.push(encryptMsgWithKey(memo, encPubkeyList[i]))
+	const encHex = encryptMsgWithKey(memo, encPubkeyList[i])
+        memoEncList.push(encHex)
       }
-      //var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      //if(gasPrice == "0x") {
-      //  gasPrice = "0x0"
-      //}
       if(payeeList.length == 1) {
         await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
 	                passphraseHashList[0], memoEncList[0]/*, {gasPrice: gasPrice}*/)
