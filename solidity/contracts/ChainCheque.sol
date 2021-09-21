@@ -193,7 +193,7 @@ contract ChainCheque {
 		address receiver = msg.sender;
 		if(accept) {
 			//check passphrase if it is not a hashtag
-			if((cheque.passphraseOrHashtag>>224) != 35) { // ascii of '#' is 35
+			if((cheque.passphraseOrHashtag>>248) != 35) { // ascii of '#' is 35
 				bytes32 hash = keccak256(passphrase);
 				require((uint(hash)<<8) == (cheque.passphraseOrHashtag<<8), "wrong-passphrase");
 			}
