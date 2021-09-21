@@ -10,7 +10,7 @@ struct Cheque {
 	address drawer;
 	uint64 deadline;
 
-	uint passphraseHash;
+	uint passphraseOrHashtag;
 }
 
 contract ChainCheque {
@@ -18,7 +18,7 @@ contract ChainCheque {
 	mapping(address => uint) public encryptionPubkeys;
 
 	event NewCheque(address indexed payee, uint indexed id, address indexed drawer,
-			uint coinTypeAndAmount, uint startAndEndTime, uint passphraseHash, bytes memo);
+			uint coinTypeAndAmount, uint startAndEndTime, uint passphraseOrHashtag, bytes memo);
 	event RevokeCheque(address indexed payee, uint indexed id);
 	event AcceptCheque(address indexed payee, uint indexed id);
 	event RefuseCheque(address indexed payee, uint indexed id);
@@ -59,14 +59,14 @@ contract ChainCheque {
 								uint96 amount,
 								address drawer,
 								uint64 deadline,
-								uint passphraseHash) {
+								uint passphraseOrHashtag) {
 
 		Cheque memory cheque = getCheque(id);
 		coinType = cheque.coinType;
 		amount = cheque.amount;
 		drawer = cheque.drawer;
 		deadline = cheque.deadline;
-		passphraseHash = cheque.passphraseHash;
+		passphraseOrHashtag = cheque.passphraseOrHashtag;
 	}
 
 	function setEncryptionPubkey(uint key, address referee) external {
@@ -108,7 +108,7 @@ contract ChainCheque {
 			address coinType,
 			uint96 amount,
 			uint64 deadline,
-			uint passphraseHash,
+			uint passphraseOrHashtag,
 			bytes calldata memo) external payable {
 		require(deadline > block.timestamp, "invalid-deadline");
 		uint realAmount = uint(amount);
@@ -121,18 +121,19 @@ contract ChainCheque {
 			uint newBalance = IERC20(coinType).balanceOf(address(this));
 			realAmount = newBalance - oldBalance;
 		}
-		_writeCheque(payee, coinType, uint96(realAmount), deadline, passphraseHash, memo);
+		_writeCheque(payee, coinType, uint96(realAmount), deadline, passphraseOrHashtag, memo);
 	}
 
 	function _writeCheque(address payee, 
 			address coinType,
 			uint96 realAmount,
 			uint64 deadline,
-			uint passphraseHash,
+			uint passphraseOrHashtag,
 			bytes calldata memo) internal {
 		require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
+		require(deadline < block.timestamp + 30 days, "deadline-must-in-one-month");
 		uint senderAsU256 = uint(uint160(bytes20(msg.sender)));
-		uint id = uint(uint160(bytes20(payee))) | (block.number<<32) | (uint(uint24(senderAsU256))<<8);
+		uint id = (uint(uint160(bytes20(payee)))<<96) | (block.number<<32) | (uint(uint24(senderAsU256))<<8);
 		while(hasCheque(id)) { //to find an unused id
 			id++;
 		}
@@ -140,12 +141,12 @@ contract ChainCheque {
 		cheque.drawer = msg.sender;
 		cheque.deadline = deadline;
 		cheque.coinType = coinType;
-		cheque.passphraseHash = passphraseHash;
+		cheque.passphraseOrHashtag = passphraseOrHashtag;
 		cheque.amount = realAmount;
 		saveCheque(id, cheque);
 		uint coinTypeAndAmount = (uint(uint160(bytes20(coinType)))<<96) | uint(realAmount);
 		uint startAndEndTime = (block.timestamp<<64) | uint(deadline);
-		emit NewCheque(payee, id, msg.sender, coinTypeAndAmount, startAndEndTime, passphraseHash, memo);
+		emit NewCheque(payee, id, msg.sender, coinTypeAndAmount, startAndEndTime, passphraseOrHashtag, memo);
 	}
 
 	function revokeCheques(uint[] calldata idList) external {
@@ -192,9 +193,9 @@ contract ChainCheque {
 		address receiver = msg.sender;
 		if(accept) {
 			//check passphrase if it is not a hashtag
-			if(uint8(cheque.passphraseHash) != 35) { // ascii of '#' is 35
+			if((cheque.passphraseOrHashtag>>224) != 35) { // ascii of '#' is 35
 				bytes32 hash = keccak256(passphrase);
-				require((uint(hash)>>8) == (cheque.passphraseHash>>8), "wrong-passphrase");
+				require((uint(hash)<<8) == (cheque.passphraseOrHashtag<<8), "wrong-passphrase");
 			}
 			emit AcceptCheque(msg.sender, id);
 		} else {
