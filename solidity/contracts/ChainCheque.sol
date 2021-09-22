@@ -19,9 +19,9 @@ contract ChainCheque {
 
 	event NewCheque(address indexed payee, uint indexed id, address indexed drawer,
 			uint coinTypeAndAmount, uint startAndEndTime, uint passphraseOrHashtag, bytes memo);
-	event RevokeCheque(address indexed payee, uint indexed id);
-	event AcceptCheque(address indexed payee, uint indexed id);
-	event RefuseCheque(address indexed payee, uint indexed id);
+	event RevokeCheque(address indexed payee, uint indexed id, address indexed drawer);
+	event AcceptCheque(address indexed payee, uint indexed id, address indexed drawer);
+	event RefuseCheque(address indexed payee, uint indexed id, address indexed drawer);
 	event SetEncryptionPubkey(address indexed payee, address referee, uint key);
 	event UnsetEncryptionPubkey(address indexed payee);
 
@@ -161,7 +161,7 @@ contract ChainCheque {
 		require(cheque.deadline < block.timestamp, "still-before-deadline");
 		deleteCheque(id);
 		safeTransfer(cheque.coinType, cheque.drawer, uint(cheque.amount));
-		emit RevokeCheque(address(uint160(id>>96)), id);
+		emit RevokeCheque(address(uint160(id>>96)), id, cheque.drawer);
 	}
 
 	function acceptCheques(uint[] calldata idList, bytes calldata passphrase) external {
@@ -197,10 +197,10 @@ contract ChainCheque {
 				bytes32 hash = keccak256(passphrase);
 				require((uint(hash)<<8) == (cheque.passphraseOrHashtag<<8), "wrong-passphrase");
 			}
-			emit AcceptCheque(msg.sender, id);
+			emit AcceptCheque(msg.sender, id, cheque.drawer);
 		} else {
 			receiver = cheque.drawer;
-			emit RefuseCheque(msg.sender, id);
+			emit RefuseCheque(msg.sender, id, cheque.drawer);
 		}
 		deleteCheque(id);
 		safeTransfer(cheque.coinType, receiver, uint(cheque.amount));
