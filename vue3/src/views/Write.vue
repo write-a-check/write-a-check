@@ -68,7 +68,6 @@ export default {
   data() {
     return {
       sep20Address: "",
-      payeeAddress: "",
       amount: 0,
       passphrase: "",
       deadline: "",
@@ -210,6 +209,22 @@ export default {
     deadline.setTime(t)
     deadline.setMinutes(deadline.getMinutes() - deadline.getTimezoneOffset())
     this.deadline = deadline.toISOString().slice(0,16)
+    console.log(this.$route)
+    if(this.$route.query.sep20Address) {
+      this.sep20Address = this.$route.query.sep20Address
+    }
+    if(this.$route.query.addressList) {
+      this.addressList = this.$route.query.addressList
+    }
+    if(this.$route.query.amount) {
+      this.amount = this.$route.query.amount
+    }
+    if(this.$route.query.hashtag) {
+      this.passphrase = "#"+this.$route.query.hashtag
+    }
+    if(this.$route.query.memo) {
+      this.memo = this.$route.query.memo
+    }
   }
 }
 </script>
