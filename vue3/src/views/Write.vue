@@ -146,10 +146,10 @@ export default {
       }
       const deadlineTimestamp =  deadline / 1000
 
-      //var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      //if(gasPrice == "0x") {
-      //  gasPrice = "0x0"
-      //}
+      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
+      if(gasPrice == "0x") {
+        gasPrice = "0x0"
+      }
 
       var totalAmount = this.amount*payeeList.length
       if(balance < totalAmount) {
@@ -161,7 +161,7 @@ export default {
 	if(ok) {
 	  const maxAmount = "0x0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 	  alert("Transaction for approving will be sent. Please retry after it succeeds.")
-          sep20Contract.connect(signer).approve(ChequeContractAddress, maxAmount/*, {gasPrice: gasPrice}*/)
+          sep20Contract.connect(signer).approve(ChequeContractAddress, maxAmount, {gasPrice: gasPrice})
 	}
 	return
       }
@@ -196,10 +196,16 @@ export default {
       }
       if(payeeList.length == 1) {
         await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
-	                passphraseHashList[0], memoEncList[0]/*, {gasPrice: gasPrice}*/)
+	                passphraseHashList[0], memoEncList[0], {gasPrice: gasPrice})
       } else {
+        const gas = await chequeContract.estimateGas.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
+			passphraseHashList, memoEncList)
+	if(gas>7000000) {
+	  alert("The count of payees is too large("+gas+"). Your transaction may fail because of high gas. Please reduce the count.")
+	  return
+	}
         await chequeContract.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
-			passphraseHashList, memoEncList/*, {gasPrice: gasPrice}*/)
+			passphraseHashList, memoEncList, {gasPrice: gasPrice})
       }
     },
   },
