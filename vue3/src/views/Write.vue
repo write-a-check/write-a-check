@@ -96,6 +96,9 @@ export default {
       var encPubkeyList = [];
       const addressList = this.addressList.split("\n")
       for(var i=0; i<addressList.length; i++) {
+        if(addressList[i].trim().length == 0) {
+	  continue
+	}
         try {
           const payee = ethers.utils.getAddress(addressList[i].trim())
           const encPubkey = await chequeContract.encryptionPubkeys(payee)
@@ -106,9 +109,13 @@ export default {
             encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
 	  }
         } catch(e) {
-          alert("Invalid Payee's Address: "+addressList[i])
-          return
+          alert("Invalid Payee's Address: "+addressList[i]+". Will ignore it.")
+          continue
         }
+      }
+      if(payeeList.length == 0) {
+        alert("Cannot find valid payees.")
+	return
       }
 
       const [coinType, symbol] = await getSEP20AddrAndSymbol(this.sep20Address)
@@ -128,6 +135,17 @@ export default {
         alert("Not an SEP20 Address: "+coinType)
 	return
       }
+
+      const deadline = new Date(this.deadline).getTime()
+      if(deadline < Date.now()) {
+        alert("Deadline should be later than current.")
+	return
+      }
+      if(deadline > Date.now() + 30*24*3600*1000) {
+        alert("Deadline should be within 30 days.")
+	return
+      }
+      const deadlineTimestamp =  deadline / 1000
 
       //var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
       //if(gasPrice == "0x") {
@@ -150,8 +168,6 @@ export default {
       }
 
       const sendAmt = ethers.utils.parseUnits(this.amount.toString(), decimals)
-
-      const deadlineTimestamp = new Date(this.deadline).getTime() / 1000
 
       var hasHashTag = this.passphrase.startsWith("#")
       var hasPassphrase = this.passphrase.length != 0 && !hasHashTag

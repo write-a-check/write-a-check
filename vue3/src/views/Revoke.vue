@@ -1,13 +1,14 @@
 <template>
-  <h3>Here you can list all the checks sent by you, and revoke the expired ones (which have passed the deadline)</h3>
   <div class="normal">
+    <h5>Here you can list all the checks sent by you, and revoke the expired ones (which have passed the deadline)</h5>
     <p style="text-align: center">
-    <button @click="list" style="width: 280px">List checks sent by me</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button @click="revoke" style="width: 280px">Revoke all expired checks</button>
+    <button @click="list" style="width: 280px">List checks sent by me</button>
     </p>
     <hr/>
-
     <p v-show="chequeNotFound">No cheque found</p>
+    <p v-show="canRevoke" style="text-align: center">
+    <button @click="revoke" style="width: 280px">Revoke all expired checks</button>
+    </p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;Status:&nbsp;<b>{{cheque.status}}</b><br/>
     Value: <b>{{cheque.amount}} {{cheque.coinSymbol}}</b>({{cheque.coinType}})<br/>
@@ -20,24 +21,17 @@
 </template>
 
 <script>
-async function getChequeList(cfg) {
-      console.log("cfg", cfg)
+async function getChequeList() {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const myAddr = await signer.getAddress()
       const myAddrPad32 = ethers.utils.hexZeroPad(myAddr, 32)
-      const NewCheque = ethers.utils.id("NewCheque(address,uint256,address,uint256,uint256,uint256,bytes)")
-      const RevokeCheque = ethers.utils.id("RevokeCheque(address,uint256)")
-      const AcceptCheque = ethers.utils.id("AcceptCheque(address,uint256)")
-      const RefuseCheque = ethers.utils.id("RefuseCheque(address,uint256)")
-      const SetEncryptionPubkey = ethers.utils.id("SetEncryptionPubkey(address,address,uint256)")
-      const UnsetEncryptionPubkey = ethers.utils.id("UnsetEncryptionPubkey(address)")
       var chequeList = []
       var coinInfoMap = new Map()
       var revokedMap = new Map()
       var acceptedMap = new Map()
       var refusedMap = new Map()
-      var filter = {address: ChequeContractAddress, topics: [null, myAddrPad32]}
+      var filter = {address: ChequeContractAddress, topics: [null, null, null, myAddrPad32]}
       const STEPS = 50000
       var toBlock = await provider.getBlockNumber()
       const blockCountInOneMonth = 30*24*3600/5
@@ -72,57 +66,48 @@ async function getChequeList(cfg) {
 	  cheque.status = "refused"
 	}
       }
-      return filterCheques(chequeList, cfg)
+      return chequeList
 }
 
 export default {
   data() {
     return {
       chequeNotFound: false,
+      canRevoke: false,
+      revokableIdList: [],
       chequeList: []
     }
   },
   methods: {
     async list() {
-      var sep20Addr, symbol
-      if(this.filter_sep20Address) {
-        [sep20Addr, symbol] = await getSEP20AddrAndSymbol(this.sep20Address)
-        if(sep20Addr === null) {
-          return
-        }
-      }
-      localStorage.setItem("cfg-filter_acceptAddrList", this.filter_acceptAddrList? "yes" : "no")
-      localStorage.setItem("cfg-acceptAddrList", this.acceptAddrList)
-      localStorage.setItem("cfg-filter_denyAddrList", this.filter_denyAddrList? "yes" : "no")
-      localStorage.setItem("cfg-denyAddrList", this.denyAddrList)
-      localStorage.setItem("cfg-filter_sep20Address", this.filter_sep20Address? "yes" : "no")
-      localStorage.setItem("cfg-sep20Address", this.sep20Address)
-      localStorage.setItem("cfg-filter_minAmount", this.filter_minAmount? "yes" : "no")
-      localStorage.setItem("cfg-minAmount", this.minAmount)
-      localStorage.setItem("cfg-filter_hashtag", this.filter_hashtag? "yes" : "no")
-      localStorage.setItem("cfg-hashtag", this.hashtag)
-      localStorage.setItem("cfg-onlyActive", this.onlyActive)
-      const hashtagHex = strToBytes32Hex(this.hashtag)
-      if(hashtagHex.length>66) {
-        alert('Hashtag is too long: "'+this.hashtag+'"')
-	return
-      }
-      var chequeList = await getChequeList({
-        "filter_acceptAddrList": this.filter_acceptAddrList,
-        "acceptAddrList": this.acceptAddrList,
-        "filter_denyAddrList": this.filter_denyAddrList,
-        "denyAddrList": this.denyAddrList,
-        "filter_sep20Address": this.filter_sep20Address,
-        "sep20Address": sep20Addr,
-        "filter_minAmount": this.filter_minAmount,
-        "minAmount": this.minAmount,
-        "filter_hashtag": this.filter_hashtag,
-        "hashtag": hashtagHex,
-	"onlyActive": this.onlyActive
-      })
+      var chequeList = await getChequeList()
       chequeList.sort(function(a,b) {return a.deadline - b.deadline})
       this.chequeNotFound = chequeList.length == 0
       this.chequeList = chequeList
+
+      var idList = []
+      for(var i=0; i<chequeList.length; i++) {
+        if(chequeList[i].status=="expired") {
+	  idList.push(chequeList[i].id)
+	}
+      }
+      this.canRevoke = idList.length != 0
+      this.revokableIdList = idList
+    },
+    async revoke() {
+      if(this.revokableIdList.length == 0) {
+        alert("Cannot find expired checks")
+	return
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
+      //var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
+      //if(gasPrice == "0x") {
+      //  gasPrice = "0x0"
+      //}
+      await chequeContract.revokeCheques(this.revokableIdList/*, {gasPrice: gasPrice}*/)
     },
   },
   async mounted() {

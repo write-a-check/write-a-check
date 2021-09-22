@@ -29,7 +29,7 @@
     <input v-model="hashtag" type="text" style="width: 435px" placeholder="Leave here black for checks without any hashtag"><br/>
 
     <input v-model="onlyActive" type="checkbox" style="width: 20px; height: 20px" checked>
-    Only show active checks which have not been accepted, refused, nor passed deadline.<br/>
+    Only show active checks (not been accepted, refused, nor expired, i.e. passed deadline).<br/>
     </div>
 
     <hr/>
@@ -55,11 +55,6 @@
 </template>
 
 <script>
-function timestamp2string(timestamp) {
-  var t = new Date()
-  t.setTime(timestamp)
-  return t.toLocaleString()
-}
 // A cheque's properties:
 //   drawer
 //   id
@@ -75,63 +70,7 @@ function timestamp2string(timestamp) {
 //   hasTag
 //   tag
 //   encryptedMemo
-//   status: active, revoked, accepted, refused, passDeadline
-
-async function getCoinSymbolAndDecimals(coinInfoMap, coinType) {
-  if(coinInfoMap.has(coinType)) {
-    return coinInfoMap.get(coinType)
-  }
-  const provider = new ethers.providers.Web3Provider(window.ethereum)
-  const sep20Contract = new ethers.Contract(coinType, SEP20ABI, provider)
-  const symbol = await sep20Contract.symbol()
-  const decimals = await sep20Contract.decimals()
-  coinInfoMap.set(coinType, [symbol, decimals])
-  return [symbol, decimals]
-}
-
-function uint8ArrayFromHex(s) {
-  var u8arr = new Uint8Array(Math.ceil(s.length / 2));
-  for (var i = 0; i < u8arr.length; i++) {
-    u8arr[i] = parseInt(s.substr(i * 2, 2), 16);
-  }
-  return u8arr
-}
-
-function strFromHex(hex) {
-  const data = uint8ArrayFromHex(hex)
-  const decoder = new TextDecoder("utf-8")
-  return decoder.decode(data)
-}
-
-async function parseNewCheque(coinInfoMap, topics, data) {
-  var cheque = {}
-  cheque.drawer = ethers.utils.getAddress("0x"+topics[3].substr(26))
-  cheque.id = topics[2]
-  cheque.payee = ethers.utils.getAddress("0x"+topics[1].substr(26))
-  const coinTypeAndAmount = data.substr(2, 64)
-  const startAndEndTime = data.substr(2+64, 64)
-  cheque.passphraseHash = "0x"+data.substr(2+64*2, 64)
-  const memoLength = ethers.BigNumber.from("0x"+data.substr(2+64*4, 64)).toNumber()
-  cheque.encryptedMemo = "0x"+data.substr(2+64*5, memoLength*2) //skip memo's offset and length
-  cheque.coinType = ethers.utils.getAddress("0x"+coinTypeAndAmount.substr(0, 20*2))
-  const [symbol, decimals] = await getCoinSymbolAndDecimals(coinInfoMap, cheque.coinType)
-  cheque.coinSymbol = symbol
-  const amt = ethers.BigNumber.from("0x"+coinTypeAndAmount.substr(20*2, 12*2))
-  cheque.amount = ethers.utils.formatUnits(amt, decimals)
-  cheque.startTime = ethers.BigNumber.from("0x"+startAndEndTime.substr(16*2, 8*2)).toNumber()
-  cheque.deadline = ethers.BigNumber.from("0x"+startAndEndTime.substr(24*2, 8*2)).toNumber()
-  cheque.startTimeStr = timestamp2string(cheque.startTime*1000)
-  cheque.deadlineStr = timestamp2string(cheque.deadline*1000)
-  cheque.hasTag = cheque.passphraseHash.substr(2,2) == "23" // 0x23 is '#'
-  console.log("--passDeadline", cheque.deadline, Date.now())
-  if(cheque.deadline*1000 <= Date.now()) {
-    cheque.status = "passDeadline"
-  } else {
-    cheque.status = "active"
-  }
-  if(cheque.hasTag) cheque.tag = strFromHex(cheque.passphraseHash)
-  return cheque
-}
+//   status: active, revoked, accepted, refused, expired
 
 function filterCheques(chequeList, cfg) {
   console.log(chequeList)
@@ -153,25 +92,20 @@ function filterCheques(chequeList, cfg) {
   }
   for(var i=0; i<chequeList.length; i++) {
     var cheque = chequeList[i]
-    console.log("why ", cfg.filter_acceptAddrList, acceptMap[cheque.drawer])
     if(cfg.filter_acceptAddrList && !acceptMap[cheque.drawer]) {
       continue
     }
-    console.log("1!", cfg.filter_denyAddrList)
     if(cfg.filter_denyAddrList && denyMap[cheque.drawer]) {
       continue
     }
-    console.log("2!", cfg.filter_sep20Address, cheque.coinType != cfg.sep20Address)
     if(cfg.filter_sep20Address && cheque.coinType != cfg.sep20Address) {
       continue
     }
-    console.log("3!")
     if(cfg.filter_minAmount) {
       if(cheque.amount < cfg.minAmount) {
         continue
       }
     }
-    console.log("4!", 0xd6c5F62c58238bfF1210b53ED5d1b2224EBC5176, cheque.passphraseHash, cfg.hashtag)
     if(cfg.filter_hashtag && cheque.passphraseHash != cfg.hashtag) {
       continue
     }
@@ -180,22 +114,14 @@ function filterCheques(chequeList, cfg) {
     }
     newList.push(cheque)
   }
-  console.log(newList)
   return newList
 }
 
 async function getChequeList(cfg) {
-      console.log("cfg", cfg)
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const myAddr = await signer.getAddress()
       const myAddrPad32 = ethers.utils.hexZeroPad(myAddr, 32)
-      const NewCheque = ethers.utils.id("NewCheque(address,uint256,address,uint256,uint256,uint256,bytes)")
-      const RevokeCheque = ethers.utils.id("RevokeCheque(address,uint256)")
-      const AcceptCheque = ethers.utils.id("AcceptCheque(address,uint256)")
-      const RefuseCheque = ethers.utils.id("RefuseCheque(address,uint256)")
-      const SetEncryptionPubkey = ethers.utils.id("SetEncryptionPubkey(address,address,uint256)")
-      const UnsetEncryptionPubkey = ethers.utils.id("UnsetEncryptionPubkey(address)")
       var chequeList = []
       var coinInfoMap = new Map()
       var revokedMap = new Map()
@@ -418,4 +344,3 @@ export default {
   }
 }
 </script>
-    <button @click="list" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
