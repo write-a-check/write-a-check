@@ -13,8 +13,7 @@ struct Cheque {
 	uint passphraseOrHashtag;
 }
 
-contract ChainCheque {
-	mapping(uint => Cheque) chequeMap;
+abstract contract ChainChequeBase {
 	mapping(address => uint) public encryptionPubkeys;
 
 	event NewCheque(address indexed payee, uint indexed id, address indexed drawer,
@@ -25,37 +24,22 @@ contract ChainCheque {
 	event SetEncryptionPubkey(address indexed payee, address referee, uint key);
 	event UnsetEncryptionPubkey(address indexed payee);
 
+	// @dev The address of precompile smart contract for SEP101
+	address constant SEP101Contract = address(bytes20(uint160(0x2712)));
+
+	// @dev The address of precompile smart contract for SEP206
 	address constant SEP206Contract = address(bytes20(uint160(0x2711)));
 
-	function getCheque(uint id) private view returns (Cheque memory cheque) {
-		cheque = chequeMap[id];
-	}
-
-	function hasCheque(uint id) private view returns (bool) {
-		Cheque memory cheque = chequeMap[id];
-		return cheque.deadline != 0;
-	}
-
-	function saveCheque(uint id, Cheque memory cheque) internal {
-		chequeMap[id] = cheque;
-	}
-
-	function deleteCheque(uint id) internal {
-		delete chequeMap[id];
-	}
-
-	function safeTransfer(address coinType, address receiver, uint value) private {
-		if(coinType == SEP206Contract) {
-			receiver.call{value: value, gas: 9000}("");
-		} else {
-			IERC20(coinType).transfer(receiver, value);
-		}
-	}
+	// virtual methods implemented by sub-contract
+	function getCheque(uint id) internal virtual returns (Cheque memory cheque);
+	function hasCheque(uint id) internal virtual returns (bool);
+	function saveCheque(uint id, Cheque memory cheque) virtual internal;
+	function deleteCheque(uint id) virtual internal;
+	function safeTransfer(address coinType, address receiver, uint value) virtual internal;
 
 // =====================================================================================================
 
-	function getChequeContent(uint id) external view returns (
-								address coinType,
+	function getChequeContent(uint id) external returns (address coinType,
 								uint96 amount,
 								address drawer,
 								uint64 deadline,
@@ -207,3 +191,95 @@ contract ChainCheque {
 	}
 }
 
+contract ChainCheque is ChainChequeBase {
+	mapping(uint => Cheque) chequeMap;
+
+	function getCheque(uint id) internal view override returns (Cheque memory cheque) {
+		cheque = chequeMap[id];
+	}
+
+	function hasCheque(uint id) internal view override returns (bool) {
+		Cheque memory cheque = chequeMap[id];
+		return cheque.deadline != 0;
+	}
+
+	function saveCheque(uint id, Cheque memory cheque) internal override {
+		chequeMap[id] = cheque;
+	}
+
+	function deleteCheque(uint id) internal override {
+		delete chequeMap[id];
+	}
+
+	function safeTransfer(address coinType, address receiver, uint value) internal override {
+		if(coinType == SEP206Contract) {
+			receiver.call{value: value, gas: 9000}("");
+		} else {
+			IERC20(coinType).transfer(receiver, value);
+		}
+	}
+}
+
+contract ChainChequeForSmartBCH is ChainChequeBase {
+	function getCheque(uint id) internal override returns (Cheque memory cheque) {
+		bytes memory idBz = abi.encode(id);
+		(bool success, bytes memory data) = SEP101Contract.delegatecall(
+			abi.encodeWithSignature("get(bytes)", idBz));
+
+		require(success && (data.length == 32*2 || data.length == 32*5));
+		if (data.length == 32*2) {
+			cheque.deadline = 0;
+			return cheque;
+		}
+
+		bytes memory vaultBz;
+		assembly { vaultBz := add(data, 64) }
+
+		(uint w0, uint w1, uint w2) = abi.decode(vaultBz, (uint, uint, uint));
+		cheque.coinType = address(bytes20(uint160(w0>>96)));
+		cheque.amount = uint96(w0);
+
+		cheque.drawer = address(bytes20(uint160(w1>>64)));
+		cheque.deadline = uint64(w1);
+
+		cheque.passphraseOrHashtag = w2;
+	}
+
+	function hasCheque(uint id) internal override returns (bool) {
+		bytes memory idBz = abi.encode(id);
+		(bool success, bytes memory data) = SEP101Contract.delegatecall(
+			abi.encodeWithSignature("get(bytes)", idBz));
+
+		require(success && (data.length == 32*2 || data.length == 32*5));
+		return data.length == 32*5;
+	}
+
+	function saveCheque(uint id, Cheque memory cheque) internal override {
+		bytes memory idBz = abi.encode(id);
+		(uint w0, uint w1) = (0, 0);
+		w0 = uint(uint160(bytes20(cheque.coinType)));
+		w0 = (w0<<96) | uint(cheque.amount);
+
+		w1 = uint(uint160(bytes20(cheque.drawer)));
+		w1 = (w1<<64) | uint(cheque.deadline);
+
+		bytes memory vaultBz = abi.encode(w0, w1, cheque.passphraseOrHashtag);
+		(bool success, bytes memory _notUsed) = SEP101Contract.delegatecall(
+			abi.encodeWithSignature("set(bytes,bytes)", idBz, vaultBz));
+		require(success, "SEP101_SET_FAIL");
+	}
+
+	function deleteCheque(uint id) internal override {
+		bytes memory idBz = abi.encode(id);
+		bytes memory vaultBz = new bytes(0); //writing zero-length bytes is for deletion
+		(bool success, bytes memory _notUsed) = SEP101Contract.delegatecall(
+			abi.encodeWithSignature("set(bytes,bytes)", idBz, vaultBz));
+		require(success, "SEP101_DEL_FAIL");
+	}
+
+	function safeTransfer(address coinType, address receiver, uint value) override internal {
+		(bool success, bytes memory _notUsed) = coinType.call(
+			abi.encodeWithSignature("transfer(address,uint256)", receiver, value));
+		require(success, "SEP206_TRANSFER_FAIL");
+	}
+}
