@@ -53,6 +53,14 @@ abstract contract ChainChequeBase {
 		passphraseOrHashtag = cheque.passphraseOrHashtag;
 	}
 
+	function batchReadEncryptionPubkeys(address[] calldata addrList) view external returns(uint[] memory) {
+		uint[] memory res = new uint[](addrList.length);
+		for(uint i=0; i<addrList.length; i++) {
+			res[i] = encryptionPubkeys[addrList[i]];
+		}
+		return res;
+	}
+
 	function setEncryptionPubkey(uint key, address referee) external {
 		encryptionPubkeys[msg.sender] = key;
 		emit SetEncryptionPubkey(msg.sender, referee, key);
@@ -114,7 +122,9 @@ abstract contract ChainChequeBase {
 			uint64 deadline,
 			uint passphraseOrHashtag,
 			bytes calldata memo) internal {
-		require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
+		if(memo.length != 0) {
+		  require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
+		}
 		require(deadline < block.timestamp + 30 days, "deadline-must-in-one-month");
 		uint senderAsU256 = uint(uint160(bytes20(msg.sender)));
 		uint id = (uint(uint160(bytes20(payee)))<<96) | (block.number<<32) | (uint(uint24(senderAsU256))<<8);
@@ -176,8 +186,8 @@ abstract contract ChainChequeBase {
 		require(block.timestamp <= cheque.deadline, "after-deadline");
 		address receiver = msg.sender;
 		if(accept) {
-			//check passphrase if it is not a hashtag
-			if((cheque.passphraseOrHashtag>>248) != 35) { // ascii of '#' is 35
+			//check passphrase if it is not a hashtag and not zero, note ascii of '#' is 35
+			if(cheque.passphraseOrHashtag != 0 && (cheque.passphraseOrHashtag>>248) != 35) {
 				bytes32 hash = keccak256(passphrase);
 				require((uint(hash)<<8) == (cheque.passphraseOrHashtag<<8), "wrong-passphrase");
 			}
