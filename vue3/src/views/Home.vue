@@ -4,15 +4,17 @@
     <p style="text-align: center"><img width="360" src="/favicon.svg"></p>
     <p>With this DApp, you can <a @click.stop.prevent="write" href="">write a check</a> to a payee, or <a @click.stop.prevent="revoke" href="">revoke expired checks</a> sent by you. You can also <a @click.stop.prevent="receive" href="">receive checks</a> sent to you.</p>
     <p>This is a <a href="https://www.puredapp.org">Pure DApp</a>, which means its contract code and front-end code are both opensource and anyone can deploy them at anywhere.</p>
-    <p v-if="allowed"><b>Currently, you have allowed checks sent to you.
-    You can <button @click="refuse" href="">refuse</button> further incoming checks. ${{myAddress}} is your current account.</b></p>
-    <p v-else><b>Currently, you have not allowed checks sent to you.
-    You can <button @click="allow" href="">allow</button> incoming checks now. ${{myAddress}} is your current account.</b></p>
+    <p v-if="allowed"><b>Currently, you have allowed checks with memos sent to you.
+    You can <button @click="refuse" href="">refuse</button> further incoming checks to have memos. ${{myAddress}} is your current account.</b></p>
+    <p v-else><b>Currently, you have not allowed checks with memo sent to you.
+    You can <button @click="allow" href="">allow</button> checks to have memos now. ${{myAddress}} is your current account.</b></p>
     <p>Together with the check, this DApp can send a memo encrypted with your public key, which can only be decrypted with the payee's private key, such that no other people can know the content.</p>
     <p>As an enhancement to the traditional paper check, you can add a passphrase or a hashtag to your check. After received a check with passphrase, the payee must enter the correct passphrase to get paid. You can send the passphrase to the payee with e-mail or IM Apps. A hashtag is just hints the usage of the check, and it does not require the payee to do anything. A hashtag begins with "#", and a passphrase does not.</p>
     <p><b>CAVEAT:</b> This is an opensource software. It is provided “as is”, without warranty of any kind. Please use it <b>AT YOUR OWN RISK</b>.</p>
     <p><button @click="deployLogic">deployLogic</button></p>
+    <!--
     <p><button @click="deploySimpleToken">deploySimpleToken</button></p>
+    -->
   </div>
 </template>
 

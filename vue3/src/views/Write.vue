@@ -92,7 +92,6 @@ export default {
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
 
       var payeeList = [];
-      var encPubkeyList = [];
       const addressList = this.addressList.split("\n")
       for(var i=0; i<addressList.length; i++) {
         if(addressList[i].trim().length == 0) {
@@ -100,13 +99,7 @@ export default {
 	}
         try {
           const payee = ethers.utils.getAddress(addressList[i].trim())
-          const encPubkey = await chequeContract.encryptionPubkeys(payee)
-          if(encPubkey == 0) {
-            alert("The payee "+payee+" is refusing checks. Will ignore it.")
-          } else {
-	    payeeList.push(payee)
-            encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
-	  }
+	  payeeList.push(payee)
         } catch(e) {
           alert("Invalid Payee's Address: "+addressList[i]+". Will ignore it.")
           continue
@@ -115,6 +108,25 @@ export default {
       if(payeeList.length == 0) {
         alert("Cannot find valid payees.")
 	return
+      }
+
+      const hasHashTag = this.passphrase.startsWith("#")
+      const hasPassphrase = this.passphrase.length != 0 && !hasHashTag
+
+      var encPubkeyList = [];
+      for(var start=0; start<payeeList.length; start+=100) {
+        const end = Math.min(start+100, payeeList.length)
+	const encPubkeys = await chequeContract.batchReadEncryptionPubkeys(payeeList.slice(start, end))
+	console.log("encPubkeys", encPubkeys)
+	for(var i=start; i<end; i++) {
+          const encPubkey = encPubkeys[i-start]
+	  console.log("encPubkey", encPubkey)
+          if(encPubkey.isZero() && (this.memo.length != 0 || hasPassphrase)) {
+            alert("The payee "+payeeList[i]+" is refusing memos and passphrase. Cannot continue.")
+	  } else {
+            encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
+	  }
+	}
       }
 
       const [coinType, symbol] = await getSEP20AddrAndSymbol(this.sep20Address)
@@ -168,8 +180,6 @@ export default {
 
       const sendAmt = ethers.utils.parseUnits(this.amount.toString(), decimals)
 
-      var hasHashTag = this.passphrase.startsWith("#")
-      var hasPassphrase = this.passphrase.length != 0 && !hasHashTag
       var passphraseHashList = []
       var memoEncList = []
       for(var i=0; i<payeeList.length; i++) {
@@ -189,10 +199,14 @@ export default {
           passphraseHashList.push(hash)
           memo = salt+""+memo
         } else {
-          passphraseHashList.push(ethers.utils.parseUnits(0))
+          passphraseHashList.push(ethers.utils.parseUnits("0"))
         }
-	const encHex = encryptMsgWithKey(memo, encPubkeyList[i])
-        memoEncList.push(encHex)
+        if(memo.length == 0) {
+          memoEncList.push("0x") // zero-length bytes
+        } else {
+	  const encHex = encryptMsgWithKey(memo, encPubkeyList[i])
+          memoEncList.push(encHex)
+        }
       }
       if(payeeList.length == 1) {
         await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
@@ -215,7 +229,6 @@ export default {
     deadline.setTime(t)
     deadline.setMinutes(deadline.getMinutes() - deadline.getTimezoneOffset())
     this.deadline = deadline.toISOString().slice(0,16)
-    console.log(this.$route)
     if(this.$route.query.sep20Address) {
       this.sep20Address = this.$route.query.sep20Address
     }

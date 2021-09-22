@@ -5,3 +5,6 @@ solidity/build
 *.log
 vue3/public/ethers-5.4.6.umd.min.js
 *.swo
+vue3/dist
+*.tgz
+simple-server/server.js

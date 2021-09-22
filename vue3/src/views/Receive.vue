@@ -35,15 +35,22 @@
     <hr/>
 
     <p v-show="chequeNotFound">No cheque found</p>
+    <p v-show="doAll">
+    <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button>
+    </p>
+    <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;Status:&nbsp;<b>{{cheque.status}}</b><br/>
     Value: <b>{{cheque.amount}} {{cheque.coinSymbol}}</b>({{cheque.coinType}})<br/>
     Start: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
     <span v-if="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
-    Memo: <span>
+    Memo:
+    <span v-if="cheque.withMemo">
     <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" v-bind:name="cheque.encryptedMemo" href="javascript:">
     Click here to decrypt the memo</a></span>
+    <span v-else style="color: grey"><i>this check has no memo</i></span>
     <br/>
     <p v-if="cheque.status=='active'" style="text-align: right">
     <button @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -137,6 +144,7 @@ async function getChequeList(cfg) {
 	filter.fromBlock = Math.max(toBlock-STEPS+1, 0)
         var logs = await provider.getLogs(filter)
 	for(var i=0; i<logs.length; i++) {
+	  console.log("log", logs[i])
 	  if(logs[i].topics[0] == NewCheque) {
 	    chequeList.push(await parseNewCheque(coinInfoMap, logs[i].topics, logs[i].data))
 	  } else if(logs[i].topics[0] == RevokeCheque) {
@@ -182,6 +190,10 @@ export default {
       showOptions: false,
       toggleBtnText: "Show Options",
       chequeNotFound: false,
+      doAll: false,
+      showTotalCoins: false,
+      totalCoins: 0,
+      coinSymbol: "",
       chequeList: []
     }
   },
@@ -227,8 +239,20 @@ export default {
         "hashtag": hashtagHex,
 	"onlyActive": this.onlyActive
       })
+      this.showTotalCoins = this.filter_sep20Address
+      if(this.filter_sep20Address) {
+        this.coinSymbol = symbol
+	var total = 0.0
+	for(var i=0; i<chequeList.length; i++) {
+	  if(chequeList[i].status == "active") {
+	    total += 1.0*chequeList[i].amount
+	  }
+	}
+	this.totalCoins = total
+      }
       chequeList.sort(function(a,b) {return a.deadline - b.deadline})
       this.chequeNotFound = chequeList.length == 0
+      this.doAll = chequeList.length != 0
       this.chequeList = chequeList
     },
     async decrypt(event) {
@@ -294,6 +318,48 @@ export default {
         gasPrice = "0x0"
       }
       await chequeContract.refuseCheque(cheque.id, {gasPrice: gasPrice})
+    },
+    async refuseAll() {
+      var idList = []
+      for(var i=0; i<this.chequeList.length; i++) {
+        if(this.chequeList[i].status=="active") {
+	  idList.push(this.chequeList[i].id)
+	}
+      }
+      if(idList.length == 0) {
+        alert("Found no active checks.")
+	return
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
+      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
+      if(gasPrice == "0x") {
+        gasPrice = "0x0"
+      }
+      await chequeContract.refuseCheques(idList, {gasPrice: gasPrice})
+    },
+    async acceptAll() {
+      var idList = []
+      for(var i=0; i<this.chequeList.length; i++) {
+        if(this.chequeList[i].status=="active" && !this.chequeList[i].hasPassphrase) {
+	  idList.push(this.chequeList[i].id)
+	}
+      }
+      if(idList.length == 0) {
+        alert("Found no active checks without passphrases.")
+	return
+      }
+
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
+      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
+      if(gasPrice == "0x") {
+        gasPrice = "0x0"
+      }
+      await chequeContract.acceptCheques(idList, "0x", {gasPrice: gasPrice})
     },
   },
   async mounted() {
