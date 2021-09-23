@@ -8,3 +8,7 @@ vue3/public/ethers-5.4.6.umd.min.js
 vue3/dist
 *.tgz
 simple-server/server.js
+node_modules/
+cache/
+artifacts/
+.idea/
