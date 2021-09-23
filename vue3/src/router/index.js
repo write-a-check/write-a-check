@@ -4,8 +4,9 @@ import Receive from '../views/Receive.vue'
 import Write from '../views/Write.vue'
 import Revoke from '../views/Revoke.vue'
 const routes = [
-  { path: "/", component: Home },
-  { path: "/refer/:refereeAddr", component: Home },
+  { path: "/", component: Receive },
+  { path: "/about", component: Home },
+  { path: "/refer/:refereeAddr", component: Receive },
   { path: "/write", component: Write },
   { path: "/receive", component: Receive },
   { path: "/revoke", component: Revoke }]

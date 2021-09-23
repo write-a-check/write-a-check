@@ -1,5 +1,4 @@
 <template>
-  <h1>Cheques on Blockchain</h1>
   <div class="normal">
     <p style="text-align: center"><img width="360" src="/favicon.svg"></p>
     <p>With this DApp, you can <a @click.stop.prevent="write" href="">write a check</a> to a payee, or <a @click.stop.prevent="revoke" href="">revoke expired checks</a> sent by you. You can also <a @click.stop.prevent="receive" href="">receive checks</a> sent to you.</p>
@@ -54,39 +53,6 @@ async function deploySimpleToken() {
   }
 }
 
-async function getPublicKey() {
-  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-  const encryptionPublicKey = await window.ethereum.request({
-    method: 'eth_getEncryptionPublicKey',
-    params: [accounts[0]]
-  })
-  console.log(encryptionPublicKey)
-  return encryptionPublicKey
-}
-
-
-async function switchAllow(allowed, referee = null) {
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const signer = provider.getSigner()
-      const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice=="0x") {
-        gasPrice = "0x0"
-      }
-      var receipt
-      if(allowed) {
-        const key = await getPublicKey()
-        const keyHex = base64ToHex(key)
-	if(referee === null) {
-	  referee = "0x0000000000000000000000000000000000000000"
-	}
-	console.log("referee",referee)
-        receipt = await chequeContract.setEncryptionPubkey("0x"+keyHex, referee, {gasPrice: gasPrice})
-      } else {
-        receipt = await chequeContract.unsetEncryptionPubkey({gasPrice: gasPrice})
-      }
-      console.log("receipt", receipt)
-}
 export default {
   name: 'Home',
   data() {
@@ -104,14 +70,11 @@ export default {
     },
     async allow() {
       var referee = "0x0000000000000000000000000000000000000000"
-      console.log(this.$route)
-      console.log(this.$route.params)
-      console.log(this.$route.params.refereeAddr)
-      if(this.$route.params.refereeAddr && this.$route.params.refereeAddr.length != 0) {
+      if(this.$route.query.refer && this.$route.params.refer.length != 0) {
 	try {
-	  referee = ethers.utils.getAddress(this.$route.params.refereeAddr)
+	  referee = ethers.utils.getAddress(this.$route.params.refer)
 	} catch (e) {
-	  alert(this.$route.params.refereeAddr+" is not an valid address for referee.")
+	  alert(this.$route.params.refer+" is not an valid address for referee.")
 	  return
 	}
       }

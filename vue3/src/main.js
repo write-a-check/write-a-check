@@ -155,6 +155,38 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
   return cheque
 }
 
+window.getPublicKey = async function() {
+  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+  const encryptionPublicKey = await window.ethereum.request({
+    method: 'eth_getEncryptionPublicKey',
+    params: [accounts[0]]
+  })
+  return encryptionPublicKey
+}
+
+window.switchAllow = async function(allowed, referee = null) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
+      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
+      if(gasPrice=="0x") {
+        gasPrice = "0x0"
+      }
+      var receipt
+      if(allowed) {
+        const key = await getPublicKey()
+        const keyHex = base64ToHex(key)
+	if(referee === null) {
+	  referee = "0x0000000000000000000000000000000000000000"
+	}
+	console.log("referee",referee)
+        receipt = await chequeContract.setEncryptionPubkey("0x"+keyHex, referee, {gasPrice: gasPrice})
+      } else {
+        receipt = await chequeContract.unsetEncryptionPubkey({gasPrice: gasPrice})
+      }
+      console.log("receipt", receipt)
+}
+
 window.NewCheque = ethers.utils.id("NewCheque(address,uint256,address,uint256,uint256,uint256,bytes)")
 window.RevokeCheque = ethers.utils.id("RevokeCheque(address,uint256,address)")
 window.AcceptCheque = ethers.utils.id("AcceptCheque(address,uint256,address)")

@@ -203,6 +203,11 @@ export default {
       this.toggleBtnText = this.showOptions? "Hide Options" : "Show Options"
     },
     async list() {
+      if (typeof window.ethereum === 'undefined') {
+        alertNoWallet()
+        return
+      }
+      this.checkAllow()
       var sep20Addr, symbol
       if(this.filter_sep20Address) {
         [sep20Addr, symbol] = await getSEP20AddrAndSymbol(this.sep20Address)
@@ -366,6 +371,29 @@ export default {
         gasPrice = "0x0"
       }
       await chequeContract.acceptCheques(idList, {gasPrice: gasPrice})
+    },
+    async checkAllow() {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const signer = provider.getSigner()
+      const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
+      const encPubkey = await chequeContract.encryptionPubkeys(await signer.getAddress())
+      if(encPubkey != 0) {
+        return
+      }
+      const ok = confirm("You have not allowed cheques to have memos. Do you want to enable memos?")
+      if(!ok) {
+        return
+      }
+      var referee = "0x0000000000000000000000000000000000000000"
+      if(this.$route.query.refer && this.$route.params.refer.length != 0) {
+	try {
+	  referee = ethers.utils.getAddress(this.$route.params.refer)
+	} catch (e) {
+	  alert(this.$route.params.refer+" is not an valid address for referee.")
+	  return
+	}
+      }
+      switchAllow(true, referee)
     },
   },
   async mounted() {
