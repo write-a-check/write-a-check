@@ -98,6 +98,9 @@ export default {
       if(this.revokableIdList.length == 0) {
         alert("Cannot find expired checks")
 	return
+      } else if(this.revokableIdList.length > 50) {
+        alert("Too many cheques to revoke. We can just refuse the first 50 cheques.")
+	this.revokableIdList = this.revokableIdList.slice(0, 50)
       }
 
       const provider = new ethers.providers.Web3Provider(window.ethereum)

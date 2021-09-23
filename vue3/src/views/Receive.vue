@@ -329,6 +329,9 @@ export default {
       if(idList.length == 0) {
         alert("Found no active checks.")
 	return
+      } else if(idList.length > 50) {
+        alert("Too many cheques to refuse. We can just refuse the first 50 cheques.")
+	idList = idList.slice(0, 50)
       }
 
       const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -350,6 +353,9 @@ export default {
       if(idList.length == 0) {
         alert("Found no active checks without passphrases.")
 	return
+      } else if(idList.length > 50) {
+        alert("Too many cheques to accept. We can just refuse the first 50 cheques.")
+	idList = idList.slice(0, 50)
       }
 
       const provider = new ethers.providers.Web3Provider(window.ethereum)
