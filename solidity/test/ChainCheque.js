@@ -41,10 +41,6 @@ describe("Chain Cheque contract", function () {
         expect(receipt.events[2].args.drawer).to.equal(owner.address)
         let balance = await token.balanceOf(cheque.address)
         expect(balance.toNumber()).to.equal(100)
-        let content = await cheque.getChequeContent(receipt.events[2].args.id)
-        expect(content.coinType).to.equal(token.address)
-        expect(content.deadline).to.equal(deadline)
-        expect(content.passphraseOrHashtag).to.equal(hash)
 
         //accept
         await expect(cheque.acceptCheque(receipt.events[2].args.id, "0x1234")).to.be.revertedWith('not-payee')
@@ -53,26 +49,20 @@ describe("Chain Cheque contract", function () {
         expect(balance.toNumber()).to.equal(0)
         balance = await token.balanceOf(payee.address)
         expect(balance.toNumber()).to.equal(100)
-        content = await cheque.getChequeContent(receipt.events[2].args.id)
-        expect(content.deadline).to.equal(0)
 
         //revoke
         tx = await cheque.writeCheque(payee.address, token.address, 100, deadline, hash, randomBytes(1))
         receipt = await tx.wait()
         await sleep(10000);
         await cheque.revokeCheque(receipt.events[2].args.id)
-        content = await cheque.getChequeContent(receipt.events[2].args.id)
-        expect(content.deadline).to.equal(0)
         balance = await token.balanceOf(owner.address)
-        expect(balance.toNumber()).to.equal(1000000-100)
+        expect(balance.toNumber()).to.equal(1000000 - 100)
 
         //refuse
-        tx = await cheque.writeCheque(payee.address, token.address, 100, deadline+10, hash, randomBytes(1))
+        tx = await cheque.writeCheque(payee.address, token.address, 100, deadline + 10, hash, randomBytes(1))
         receipt = await tx.wait()
         await cheque.connect(payee).refuseCheque(receipt.events[2].args.id)
-        content = await cheque.getChequeContent(receipt.events[2].args.id)
-        expect(content.deadline).to.equal(0)
         balance = await token.balanceOf(owner.address)
-        expect(balance.toNumber()).to.equal(1000000-100)
+        expect(balance.toNumber()).to.equal(1000000 - 100)
     });
 });
