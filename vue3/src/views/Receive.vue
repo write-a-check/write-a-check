@@ -365,7 +365,7 @@ export default {
       if(gasPrice == "0x") {
         gasPrice = "0x0"
       }
-      await chequeContract.acceptCheques(idList, "0x", {gasPrice: gasPrice})
+      await chequeContract.acceptCheques(idList, {gasPrice: gasPrice})
     },
   },
   async mounted() {

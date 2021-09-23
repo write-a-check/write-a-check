@@ -11,7 +11,7 @@ window.ChequeABI = [
   "function writeCheques(address[] calldata payeeList, address coinType, uint96 amount, uint64 deadline, uint[] calldata passphraseHashList, bytes[] calldata memoList) external payable",
   "function writeCheque(address payee, address coinType, uint96 amount, uint64 deadline, uint passphraseHash, bytes calldata memo) external payable",
   "function revokeCheques(uint[] calldata idList) external",
-  "function acceptCheques(uint[] calldata idList, bytes calldata passphrase) external",
+  "function acceptCheques(uint[] calldata idList) external",
   "function refuseCheques(uint[] calldata idList) external",
   "function acceptCheque(uint id, bytes calldata passphrase) external",
   "function refuseCheque(uint id) external"]
