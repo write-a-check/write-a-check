@@ -91,10 +91,15 @@ window.strToBytes32Hex = function(s) {
 
 window.uint8ArrayFromHex = function(s) {
   var u8arr = new Uint8Array(Math.ceil(s.length / 2));
-  for (var i = 0; i < u8arr.length; i++) {
+  var end = 0
+  for (var i = 1; i < u8arr.length; i++) {//ignore the leading '0x'
     u8arr[i] = parseInt(s.substr(i * 2, 2), 16);
+    if(u8arr[i] == 0) {
+      end = i
+      break
+    }
   }
-  return u8arr
+  return u8arr.slice(0, end)
 }
 
 window.strFromHex = function(hex) {

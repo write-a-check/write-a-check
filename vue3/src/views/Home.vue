@@ -1,5 +1,5 @@
 <template>
-  <h1>Write a Check on Blockchain</h1>
+  <h1>Cheques on Blockchain</h1>
   <div class="normal">
     <p style="text-align: center"><img width="360" src="/favicon.svg"></p>
     <p>With this DApp, you can <a @click.stop.prevent="write" href="">write a check</a> to a payee, or <a @click.stop.prevent="revoke" href="">revoke expired checks</a> sent by you. You can also <a @click.stop.prevent="receive" href="">receive checks</a> sent to you.</p>
