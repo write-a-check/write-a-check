@@ -289,7 +289,7 @@ export default {
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
       var passphrase = ""
-      if(!cheque.hasTag) {
+      if(cheque.hasPassphrase) {
         if(cheque.decryptedMemo === undefined) {
 	  alert("Please decrypt the memo first")
 	  return

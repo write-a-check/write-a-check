@@ -11,11 +11,14 @@
    <td><input v-model="amount" type="number" placeholder="Please enter a number"></td></tr>
    <tr><td><b>Deadline</b></td>
    <td><input v-model="deadline" type="datetime-local"></td></tr>
-   <tr><td><b>Passphrase or Hashtag</b><br/>
-   (A hashtag begins with "#", and a passphrase does not)</td>
+   <tr><td><b>Tag</b>
+   (If you mark it as a secret tag, then the receiver must enter this tag to get the coins.)</td>
    <td><input v-model="passphrase" type="text"
-   placeholder="Leave here black if passphrase or hashtag isn't needed"></td></tr>
-   <tr><td><b>Memo</b><br/>
+   placeholder="Leave here black if tag isn't needed"><br/>
+   <input v-model="isRealPassphrase" type="checkbox" style="width: 20px; height: 20px" >
+   This is a secret tag
+   </td></tr>
+   <tr><td><b>Memo</b>
    (It will be encrypted by the payee's public key and only the payee can decrypt)</td>
    <td><textarea v-model="memo" placeholder="Please enter some text to explain what is the purpose of this check." rows="10" cols="40"></textarea></td></tr>
    </table>
@@ -70,6 +73,7 @@ export default {
       sep20Address: "",
       amount: 0,
       passphrase: "",
+      isRealPassphrase: false,
       deadline: "",
       addressList: [],
       memo: ""
@@ -80,7 +84,7 @@ export default {
        this.addressList = extractAddrList(this.addressList, this.sep20Address)
     },
     useBCH() {
-       this.sep20Address = "0x0000000000000000000000000000000000002711"
+       this.sep20Address = SEP206Address
     },
     async submit() {
       if (typeof window.ethereum === 'undefined') {
@@ -110,8 +114,8 @@ export default {
 	return
       }
 
-      const hasHashTag = this.passphrase.startsWith("#")
-      const hasPassphrase = this.passphrase.length != 0 && !hasHashTag
+      const hasHashTag = this.passphrase.length != 0 && !this.isRealPassphrase
+      const hasPassphrase = this.passphrase.length != 0 && this.isRealPassphrase
 
       var encPubkeyList = [];
       for(var start=0; start<payeeList.length; start+=100) {
@@ -122,7 +126,7 @@ export default {
           const encPubkey = encPubkeys[i-start]
 	  console.log("encPubkey", encPubkey)
           if(encPubkey.isZero() && (this.memo.length != 0 || hasPassphrase)) {
-            alert("The payee "+payeeList[i]+" is refusing memos and passphrase. Cannot continue.")
+            alert("The payee "+payeeList[i]+" is refusing memos, which means you cannot send secret tags either.")
 	  } else {
             encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
 	  }
@@ -137,8 +141,9 @@ export default {
       var balance, decimals, allowance;
       const sep20Contract = new ethers.Contract(coinType, SEP20ABI, provider)
       try {
-	const balanceAmt = await sep20Contract.balanceOf(signer.getAddress())
-	const allowanceAmt = await sep20Contract.allowance(signer.getAddress(), ChequeContractAddress)
+        const addr = await signer.getAddress()
+	const balanceAmt = await sep20Contract.balanceOf(addr)
+	const allowanceAmt = await sep20Contract.allowance(addr, ChequeContractAddress)
         decimals = await sep20Contract.decimals()
         balance = ethers.utils.formatUnits(balanceAmt, decimals)
 	allowance = ethers.utils.formatUnits(allowanceAmt, decimals)
@@ -168,7 +173,7 @@ export default {
         alert("You do not own enough "+symbol+" to send! "+payeeList.length+" payees needs "+totalAmount+" and you only have "+balance)
         return
       }
-      if(allowance < totalAmount) {
+      if(this.sep20Address != SEP206Address && allowance < totalAmount) {
         const ok = confirm("You haven't approve enough "+symbol+" to this DApp. "+payeeList.length+" payees needs "+totalAmount+" and you only approved "+allowance+". Do you want to approve now?")
 	if(ok) {
 	  const maxAmount = "0x0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
@@ -179,17 +184,21 @@ export default {
       }
 
       const sendAmt = ethers.utils.parseUnits(this.amount.toString(), decimals)
+      var value = ethers.BigNumber.from(0)
+      if(this.sep20Address == SEP206Address) {
+        value = ethers.utils.parseUnits(totalAmount.toString(), decimals)
+      }
 
       var passphraseHashList = []
       var memoEncList = []
       for(var i=0; i<payeeList.length; i++) {
         var memo = this.memo
         if(hasHashTag) {
-	  const hex = strToBytes32Hex(this.passphrase)
+	  const hex = strToBytes32Hex('#'+this.passphrase)
           if(hex.length<=66) {
             passphraseHashList.push(hex)
           } else {
-            alert('Hashtag "'+this.passphrase+'" is too long')
+            alert('The tag "'+this.passphrase+'" is too long')
             return
           }
         } else if(hasPassphrase) {
@@ -210,16 +219,16 @@ export default {
       }
       if(payeeList.length == 1) {
         await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
-	                passphraseHashList[0], memoEncList[0], {gasPrice: gasPrice})
+	                passphraseHashList[0], memoEncList[0], {gasPrice: gasPrice, value: value})
       } else {
         const gas = await chequeContract.estimateGas.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
-			passphraseHashList, memoEncList)
+			passphraseHashList, memoEncList, {value: value})
 	if(gas>7000000) {
 	  alert("The count of payees is too large("+gas+"). Your transaction may fail because of high gas. Please reduce the count.")
 	  return
 	}
         await chequeContract.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
-			passphraseHashList, memoEncList, {gasPrice: gasPrice})
+			passphraseHashList, memoEncList, {gasPrice: gasPrice, value: value})
       }
     },
   },

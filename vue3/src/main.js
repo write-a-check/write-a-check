@@ -3,6 +3,8 @@ import App from './App.vue'
 import router from './router'
 import './index.css'
 
+window.SEP206Address = "0x0000000000000000000000000000000000002711"
+
 window.ChequeABI = [
   "function encryptionPubkeys(address) external view returns (uint)",
   "function batchReadEncryptionPubkeys(address[] calldata addrList) view external returns(uint[] memory)",
@@ -45,6 +47,9 @@ if (typeof window.ethereum === 'undefined') {
 
 window.getSEP20AddrAndSymbol = async function(line) {
       var trimmed = line.trim()
+      if(trimmed==SEP206Address || trimmed=="BCH") {
+        return [SEP206Address, "BCH"]
+      }
       if(trimmed.length!=42) {//not hex, so it is a symbol
          const hexAddr = localStorage.getItem("coin-"+trimmed)
 	 if(trimmed === null) {
@@ -90,10 +95,10 @@ window.strToBytes32Hex = function(s) {
 }
 
 window.uint8ArrayFromHex = function(s) {
-  var u8arr = new Uint8Array(Math.ceil(s.length / 2));
+  var u8arr = new Uint8Array(Math.ceil(s.length / 2)-1);
   var end = 0
-  for (var i = 1; i < u8arr.length; i++) {//ignore the leading '0x'
-    u8arr[i] = parseInt(s.substr(i * 2, 2), 16);
+  for (var i = 0; i < u8arr.length; i++) {//
+    u8arr[i] = parseInt(s.substr(2/*ignore the leading '0x'*/+i*2, 2), 16);
     if(u8arr[i] == 0) {
       end = i
       break
@@ -109,6 +114,9 @@ window.strFromHex = function(hex) {
 }
 
 window.getCoinSymbolAndDecimals = async function(coinInfoMap, coinType) {
+  if(coinType == SEP206Address) {
+    return ["BCH", 18]
+  }
   if(coinInfoMap.has(coinType)) {
     return coinInfoMap.get(coinType)
   }
@@ -151,7 +159,7 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
   } else {
     cheque.status = "active"
   }
-  if(cheque.hasTag) cheque.tag = strFromHex(cheque.passphraseHash)
+  if(cheque.hasTag) cheque.tag = strFromHex(cheque.passphraseHash).substr(1) //remove the leading '#'
   return cheque
 }
 
