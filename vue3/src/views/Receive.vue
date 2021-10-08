@@ -207,7 +207,7 @@ export default {
         alertNoWallet()
         return
       }
-      this.checkAllow()
+      //this.checkAllow()
       var sep20Addr, symbol
       if(this.filter_sep20Address) {
         [sep20Addr, symbol] = await getSEP20AddrAndSymbol(this.sep20Address)
