@@ -40,11 +40,28 @@ window.alertNoWallet = () => {
       alert("No wallet installed! Please install MetaMask or other web3 wallet to use this App.");
 }
 
-if (typeof window.ethereum === 'undefined') {
-  alertNoWallet()
-} else {
-  ethereum.request({ method: 'eth_requestAccounts' })
+async function connectWallet() {
+   if (typeof window.ethereum === 'undefined') {
+      if (typeof window.web3 !== 'undefined') {
+          window.ethereum = window.web3
+      } else if (typeof window.TPJSBrigeClient !== 'undefined') {
+          window.ethereum = window.TPJSBrigeClient
+      } else if (typeof window.imToken !== 'undefined') {
+          window.ethereum = window.imToken
+      } else {
+          const provider = await detectEthereumProvider()
+          if (provider) {
+              window.ethereum = provider
+          } else {
+              alertNoWallet()
+          }
+      }
+   } else {
+      ethereum.request({ method: 'eth_requestAccounts' })
+   }
 }
+
+connectWallet()
 
 window.getSEP20AddrAndSymbol = async function(line) {
       var trimmed = line.trim()
@@ -177,10 +194,6 @@ window.switchAllow = async function(allowed, referee = null) {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice=="0x") {
-        gasPrice = "0x0"
-      }
       var receipt
       if(allowed) {
         const key = await getPublicKey()
@@ -189,9 +202,9 @@ window.switchAllow = async function(allowed, referee = null) {
 	  referee = "0x0000000000000000000000000000000000000000"
 	}
 	console.log("referee",referee)
-        receipt = await chequeContract.setEncryptionPubkey("0x"+keyHex, referee, {gasPrice: gasPrice})
+        receipt = await chequeContract.setEncryptionPubkey("0x"+keyHex, referee)
       } else {
-        receipt = await chequeContract.unsetEncryptionPubkey({gasPrice: gasPrice})
+        receipt = await chequeContract.unsetEncryptionPubkey()
       }
       console.log("receipt", receipt)
 }
