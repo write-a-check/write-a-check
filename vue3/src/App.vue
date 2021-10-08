@@ -22,6 +22,7 @@
     <router-link to="/receive">receive</router-link><span style="color: #EEEEEE"> | </span>
     <router-link to="/write">write</router-link><span style="color: #EEEEEE"> | </span>
     <router-link to="/revoke">revoke</router-link><span style="color: #EEEEEE"> | </span>
+    <router-link to="/donate">donate</router-link><span style="color: #EEEEEE"> | </span>
     <router-link to="/about">about</router-link>
   </div>
   <router-view/>

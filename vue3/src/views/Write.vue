@@ -163,11 +163,6 @@ export default {
       }
       const deadlineTimestamp =  deadline / 1000
 
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice == "0x") {
-        gasPrice = "0x0"
-      }
-
       var totalAmount = this.amount*payeeList.length
       if(balance < totalAmount) {
         alert("You do not own enough "+symbol+" to send! "+payeeList.length+" payees needs "+totalAmount+" and you only have "+balance)
@@ -178,7 +173,7 @@ export default {
 	if(ok) {
 	  const maxAmount = "0x0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
 	  alert("Transaction for approving will be sent. Please retry after it succeeds.")
-          sep20Contract.connect(signer).approve(ChequeContractAddress, maxAmount, {gasPrice: gasPrice})
+          sep20Contract.connect(signer).approve(ChequeContractAddress, maxAmount)
 	}
 	return
       }
@@ -219,7 +214,7 @@ export default {
       }
       if(payeeList.length == 1) {
         await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
-	                passphraseHashList[0], memoEncList[0], {gasPrice: gasPrice, value: value})
+	                passphraseHashList[0], memoEncList[0], {value: value})
       } else {
         const gas = await chequeContract.estimateGas.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
 			passphraseHashList, memoEncList, {value: value})
@@ -228,7 +223,7 @@ export default {
 	  return
 	}
         await chequeContract.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
-			passphraseHashList, memoEncList, {gasPrice: gasPrice, value: value})
+			passphraseHashList, memoEncList, {value: value})
       }
     },
   },

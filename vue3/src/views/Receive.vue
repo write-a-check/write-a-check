@@ -295,7 +295,7 @@ export default {
 	  return
 	}
 	const salt = cheque.decryptedMemo.substr(0, 16)
-        passphrase = prompt("Please enter the passphrase of this check:")
+        passphrase = prompt("Please enter the secret tag of this check:")
         passphrase = salt + passphrase
         try {
           await chequeContract.estimateGas.acceptCheque(cheque.id, ethers.utils.toUtf8Bytes(passphrase))
@@ -304,11 +304,7 @@ export default {
 	  return
 	}
       }
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice == "0x") {
-        gasPrice = "0x0"
-      }
-      await chequeContract.acceptCheque(cheque.id, ethers.utils.toUtf8Bytes(passphrase), {gasPrice: gasPrice})
+      await chequeContract.acceptCheque(cheque.id, ethers.utils.toUtf8Bytes(passphrase))
     },
 
     async refuse(event) {
@@ -318,11 +314,7 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice == "0x") {
-        gasPrice = "0x0"
-      }
-      await chequeContract.refuseCheque(cheque.id, {gasPrice: gasPrice})
+      await chequeContract.refuseCheque(cheque.id)
     },
     async refuseAll() {
       var idList = []
@@ -342,11 +334,7 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice == "0x") {
-        gasPrice = "0x0"
-      }
-      await chequeContract.refuseCheques(idList, {gasPrice: gasPrice})
+      await chequeContract.refuseCheques(idList)
     },
     async acceptAll() {
       var idList = []
@@ -356,7 +344,7 @@ export default {
 	}
       }
       if(idList.length == 0) {
-        alert("Found no active checks without passphrases.")
+        alert("Found no active checks without secret tags.")
 	return
       } else if(idList.length > 50) {
         alert("Too many cheques to accept. We can just refuse the first 50 cheques.")
@@ -366,11 +354,7 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      var gasPrice = await provider.getStorageAt("0x0000000000000000000000000000000000002710","0x00000000000000000000000000000000000000000000000000000000000000002")
-      if(gasPrice == "0x") {
-        gasPrice = "0x0"
-      }
-      await chequeContract.acceptCheques(idList, {gasPrice: gasPrice})
+      await chequeContract.acceptCheques(idList)
     },
     async checkAllow() {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
