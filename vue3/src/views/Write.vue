@@ -126,7 +126,7 @@ export default {
           const encPubkey = encPubkeys[i-start]
 	  console.log("encPubkey", encPubkey)
           if(encPubkey.isZero() && (this.memo.length != 0 || hasPassphrase)) {
-            alert("The payee "+payeeList[i]+" is refusing memos, which means you cannot send secret tags either.")
+            alert("The payee "+payeeList[i]+" is refusing memos, which means you cannot send secret tags either. Please do not send cheques with memos and/or secret tags.")
 	  } else {
             encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
 	  }
