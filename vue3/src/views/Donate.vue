@@ -1,7 +1,7 @@
 <template>
   <div class="normal">
    <p>Blockchain cheque is a new idea. We want to promote it through airdrops. At the beginning, we would like to start with $CATS. So if you have some $CATS token, please donate some to this airdrop events. Thank you very much!</p>
-   <p>The community has donated {{totalDonation}} $CATS to this airdrop project.</p>
+   <p>The community has donated {{totalDonation}} $CATS to this airdrop project.<a href="https://www.checkbook.cash/donations.html">Here</a> is a full list of donations, which is periodically updated.</p>
    <table style="margin: auto; border-spacing: 15px;">
    <tr><td><b>Address of $CATS</b><br/>
    </td>
@@ -23,7 +23,8 @@
    <table border=1>
    <tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>
    <template v-for="(entry, idx) in donations" :keys="entry.id">
-   <tr><td>{{entry.height}}</td><td>{{entry.name}}</td><td>{{entry.amount}}</td><td>{{entry.comment}}</td></tr>
+   <tr><td>{{entry.height}}</td><td>{{entry.name}}</td><td>{{entry.amount}}</td>
+   <td><span style="white-space: pre-line">{{entry.comment}}</span></td></tr>
    </template>
    </table>
   </div>
