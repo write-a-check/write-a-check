@@ -288,7 +288,7 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      var passphrase = ""
+      var passphrase = "0x"
       if(cheque.hasPassphrase) {
         if(cheque.decryptedMemo === undefined) {
 	  alert("Please decrypt the memo first")

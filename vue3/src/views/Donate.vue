@@ -174,5 +174,13 @@ export default {
       this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
     }
   },
+  async mounted() {
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
+    const balanceAmt = await sep20Contract.balanceOf(this.receipt)
+    const decimals = await sep20Contract.decimals()
+    this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
+    this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
+  }
 }
 </script>
