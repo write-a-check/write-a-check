@@ -19,11 +19,11 @@
    <div style="margin: auto; width: 40%"><br/>
    <button @click="donate" style="font-size: 24px; width: 300px">Donate</button></div>
    <hr>
-   <p style="text-align: center">Recent Donations:</p>
+   <p style="text-align: center"><button @click="showLatest" style="font-size: 24px; width: 300px">Show Latest Donations</button></p>
    <table border=1>
-   <tr><th>Donator's address</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>
-   <template v-for="(entry, idx) in donations" :keys="cheque.id">
-   <tr><td>{{entry.donator}}</td><td>{{entry.name}}</td><td>{{entry.amount}}</td><td>{{entry.comment}}</td></tr>
+   <tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>
+   <template v-for="(entry, idx) in donations" :keys="entry.id">
+   <tr><td>{{entry.height}}</td><td>{{entry.name}}</td><td>{{entry.amount}}</td><td>{{entry.comment}}</td></tr>
    </template>
    </table>
   </div>
@@ -75,6 +75,7 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 				continue
 			}
 			var entry = {
+				id: tx.from+":"+tx.blockNumber,
 				height: tx.blockNumber,
 				donator: tx.from,
 				amount: ethers.utils.formatUnits(amount, 2),
@@ -88,7 +89,7 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 				entry.comment = dec.decode(arr.slice(1+len))
 			}
 			console.log(entry)
-			donations.unshift(entry)
+			donations.push(entry)
 			if(donations.length >= maxCount) {
 				return donations
 			}
@@ -159,18 +160,19 @@ export default {
 
       await ethereum.request({method: 'eth_sendTransaction', params: [transactionParameters]})
     },
-  },
-  async mounted() {
-    if (typeof window.ethereum === 'undefined') {
-      alertNoWallet()
-      return
+    async showLatest() {
+      if (typeof window.ethereum === 'undefined') {
+        alertNoWallet()
+        return
+      }
+      this.donations = []
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
+      const balanceAmt = await sep20Contract.balanceOf(this.receipt)
+      const decimals = await sep20Contract.decimals()
+      this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
+      this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
     }
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
-    const balanceAmt = await sep20Contract.balanceOf(this.receipt)
-    const decimals = await sep20Contract.decimals()
-    this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
-    this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
-  }
+  },
 }
 </script>
