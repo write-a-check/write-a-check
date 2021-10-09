@@ -304,6 +304,13 @@ export default {
 	  alert("Failed to estimate gas, maybe you entered incorrect passphrase")
 	  return
 	}
+      } else if(this.$route.query.referee) {
+        try { // to embed referee's address into passphrase when there is no need for correct passphrase
+	  passphrase = ethers.utils.getAddress(this.$route.query.referee)
+	} catch(e) {
+	  //do nothing
+	}
+	console.log("passphrase from referee", passphrase)
       }
       await chequeContract.acceptCheque(cheque.id, passphrase)
     },
