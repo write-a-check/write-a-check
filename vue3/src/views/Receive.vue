@@ -297,14 +297,15 @@ export default {
 	const salt = cheque.decryptedMemo.substr(0, 16)
         passphrase = prompt("Please enter the secret tag of this check:")
         passphrase = salt + passphrase
+	passphrase = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(passphrase)) // double hash
         try {
-          await chequeContract.estimateGas.acceptCheque(cheque.id, ethers.utils.toUtf8Bytes(passphrase))
+          await chequeContract.estimateGas.acceptCheque(cheque.id, passphrase)
         } catch(e) {
 	  alert("Failed to estimate gas, maybe you entered incorrect passphrase")
 	  return
 	}
       }
-      await chequeContract.acceptCheque(cheque.id, ethers.utils.toUtf8Bytes(passphrase))
+      await chequeContract.acceptCheque(cheque.id, passphrase)
     },
 
     async refuse(event) {

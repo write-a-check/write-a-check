@@ -199,6 +199,7 @@ export default {
         } else if(hasPassphrase) {
           const salt = genRand()
 	  var hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(salt+this.passphrase))
+	  hash = ethers.utils.keccak256(hash) // double hash
 	  hash = "0x00"+hash.substr(4) // force the highest byte to be zero
           passphraseHashList.push(hash)
           memo = salt+""+memo

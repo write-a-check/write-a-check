@@ -34,7 +34,7 @@ window.SEP20ABI = [
     "event Approval(address indexed owner, address indexed spender, uint256 value)"]
 
 window.ChequeContractAddress = "0xfC4956e6e9EBA4F22b42Ef67C9aEA5f43e58f700"
-//testnet "0xa29eF06fb43Ac4f61E2cC9446089B0A829124237"
+//window.ChequeContractAddress = "0xa29eF06fb43Ac4f61E2cC9446089B0A829124237"//testnet 
 
 window.alertNoWallet = () => {
       alert("No wallet installed! Please install MetaMask or other web3 wallet to use this App.");
