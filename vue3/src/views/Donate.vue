@@ -68,7 +68,7 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 		filter.toBlock = toBlock
 		filter.fromBlock = Math.max(toBlock-STEPS, 0)
 		const logs = await provider.getLogs(filter)
-		for(var i=0; i<logs.length; i++) {
+		for(var i=logs.length-1; i>=0; i--) {
 			const tx = await provider.getTransaction(logs[i].transactionHash)
 			const amount = ethers.BigNumber.from("0x"+tx.data.substr((4+32)*2+2, 64))
 			if(tx.from == receipt) {
@@ -87,7 +87,7 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 				entry.name = dec.decode(arr.slice(1, len+1))
 				entry.comment = dec.decode(arr.slice(1+len))
 			}
-			//console.log(entry)
+			console.log(entry)
 			donations.unshift(entry)
 			if(donations.length >= maxCount) {
 				return donations
