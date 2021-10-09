@@ -1,6 +1,7 @@
 <template>
   <div class="normal">
    <p>Blockchain cheque is a new idea. We want to promote it through airdrops. At the beginning, we would like to start with $CATS. So if you have some $CATS token, please donate some to this airdrop events. Thank you very much!</p>
+   <p>The community has donated {{totalDonation}} $CATS to this airdrop project.</p>
    <table style="margin: auto; border-spacing: 15px;">
    <tr><td><b>Address of $CATS</b><br/>
    </td>
@@ -17,6 +18,14 @@
    </table>
    <div style="margin: auto; width: 40%"><br/>
    <button @click="donate" style="font-size: 24px; width: 300px">Donate</button></div>
+   <hr>
+   <p style="text-align: center">Recent Donations:</p>
+   <table border=1>
+   <tr><th>Donator's address</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>
+   <template v-for="(entry, idx) in donations" :keys="cheque.id">
+   <tr><td>{{entry.donator}}</td><td>{{entry.name}}</td><td>{{entry.amount}}</td><td>{{entry.comment}}</td></tr>
+   </template>
+   </table>
   </div>
 </template>
 
@@ -34,9 +43,68 @@ button {
 </style>
 
 <script>
+function hex2arr(s) {
+  var u8arr = new Uint8Array(Math.ceil(s.length / 2));
+  for (var i = 0; i < u8arr.length; i++) {
+    u8arr[i] = parseInt(s.substr(i*2, 2), 16);
+  }
+  return u8arr
+}
+
+async function getDonations(coinType, receipt, provider, maxCount) {
+	var toBlock = await provider.getBlockNumber()
+	var filter = {
+		address: coinType,
+		topics: [
+			ethers.utils.id("Transfer(address,address,uint256)"),
+			null,
+			"0x000000000000000000000000"+receipt.substr(2),
+		]
+	}
+	const STEPS = 50000
+	var donations = []
+	var dec = new TextDecoder()
+	while(toBlock > 0) {
+		filter.toBlock = toBlock
+		filter.fromBlock = Math.max(toBlock-STEPS, 0)
+		const logs = await provider.getLogs(filter)
+		for(var i=0; i<logs.length; i++) {
+			const tx = await provider.getTransaction(logs[i].transactionHash)
+			const amount = ethers.BigNumber.from("0x"+tx.data.substr((4+32)*2+2, 64))
+			if(tx.from == receipt) {
+				continue
+			}
+			var entry = {
+				height: tx.blockNumber,
+				donator: tx.from,
+				amount: ethers.utils.formatUnits(amount, 2),
+				name: "",
+				comment: "",
+			}
+			var arr = hex2arr(tx.data.slice((4+64)*2+2))
+			if(arr.length != 0) {
+				var len = arr[0]
+				entry.name = dec.decode(arr.slice(1, len+1))
+				entry.comment = dec.decode(arr.slice(1+len))
+			}
+			//console.log(entry)
+			donations.unshift(entry)
+			if(donations.length >= maxCount) {
+				return donations
+			}
+		}
+		toBlock -= STEPS
+	}
+	return donations
+}
+
 export default {
   data() {
     return {
+      coinType: "0x265bD28d79400D55a1665707Fa14A72978FA6043",
+      receipt: "0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41",
+      totalDonation: 0,
+      donations: [],
       amount: 0,
       donator: "",
       comment: ""
@@ -48,14 +116,13 @@ export default {
         alertNoWallet()
         return
       }
-      const coinType = "0x265bD28d79400D55a1665707Fa14A72978FA6043"
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       if(this.amount == 0) {
         alert("The donation amount is zero!")
 	return
       }
-      const sep20Contract = new ethers.Contract(coinType, SEP20ABI, provider)
+      const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
       const myAddr = await signer.getAddress()
       const balanceAmt = await sep20Contract.balanceOf(myAddr)
       const decimals = await sep20Contract.decimals()
@@ -64,8 +131,7 @@ export default {
         alert("You do not own "+ this.amount +" $CATS to send! you only have "+balance)
         return
       }
-      const receipt = "0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41"
-      const receiptPad32 = ethers.utils.hexZeroPad(receipt, 32)
+      const receiptPad32 = ethers.utils.hexZeroPad(this.receipt, 32)
       const amount256 = ethers.utils.hexZeroPad(ethers.utils.parseUnits(this.amount.toString(), decimals), 32)
       //console.log(amount256)
       var data = "0xa9059cbb"+receiptPad32.slice(2)+amount256.slice(2)
@@ -85,7 +151,7 @@ export default {
       //console.log("add comment", data)
 
       const transactionParameters = {
-        to: coinType,
+        to: this.coinType,
         from: myAddr,
         value: "0x00", 
         data: data,
@@ -93,6 +159,18 @@ export default {
 
       await ethereum.request({method: 'eth_sendTransaction', params: [transactionParameters]})
     },
+  },
+  async mounted() {
+    if (typeof window.ethereum === 'undefined') {
+      alertNoWallet()
+      return
+    }
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
+    const balanceAmt = await sep20Contract.balanceOf(this.receipt)
+    const decimals = await sep20Contract.decimals()
+    this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
+    this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
   }
 }
 </script>

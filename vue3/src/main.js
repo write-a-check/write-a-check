@@ -183,11 +183,15 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
 
 window.getPublicKey = async function() {
   const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-  const encryptionPublicKey = await window.ethereum.request({
-    method: 'eth_getEncryptionPublicKey',
-    params: [accounts[0]]
-  })
-  return encryptionPublicKey
+  try {
+    const encryptionPublicKey = await window.ethereum.request({
+      method: 'eth_getEncryptionPublicKey',
+      params: [accounts[0]]
+    })
+    return encryptionPublicKey
+  } catch(e) {
+    return null
+  }
 }
 
 window.switchAllow = async function(allowed, referee = null) {
@@ -197,6 +201,10 @@ window.switchAllow = async function(allowed, referee = null) {
       var receipt
       if(allowed) {
         const key = await getPublicKey()
+        if(key === null) {
+	  alert("Sorry, your wallet does not support encrypt&decrypt API")
+	  return
+	}
         const keyHex = base64ToHex(key)
 	if(referee === null) {
 	  referee = "0x0000000000000000000000000000000000000000"
