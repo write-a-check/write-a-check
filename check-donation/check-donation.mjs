@@ -64,15 +64,19 @@ const coinType = "0x265bD28d79400D55a1665707Fa14A72978FA6043"
 const receipt = "0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41"
 const donations = await getDonations(coinType, receipt, provider, 50)
 donations.sort(function(a,b) {return b.amount - a.amount})
-var content = ["<html><body><p>Update Time:&nbsp;"+(new Date).toISOString()+"</p>"]
+var content = ["<html><body><p>Here is a list of all the donations to support the airdrop from checkbook.cash.</p>"]
+content.push("<p>This list is periodically updated. Last Update Time:&nbsp;"+(new Date).toISOString()+"</p>")
 content.push("<table border=1>")
 content.push("<tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>")
+var total = 0.0
 for(var i=0; i<donations.length; i++) {
 	content.push("<tr><td>"+donations[i].height+"</td>")
 	content.push("<td>"+donations[i].name+"</td>")
 	content.push("<td>"+donations[i].amount+"</td>")
+	total += 1.0*donations[i].amount
 	content.push('<td><span style="white-space: pre-line">'+donations[i].comment+"</span></td></tr>")
 }
+console.log("total", total)
 content.push("</table></body></html>")
 fs.writeFile("donations.html", content.join("\n"), function (err,data) {
   if (err) {

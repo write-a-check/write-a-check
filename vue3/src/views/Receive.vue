@@ -304,13 +304,12 @@ export default {
 	  alert("Failed to estimate gas, maybe you entered incorrect passphrase")
 	  return
 	}
-      } else if(this.$route.query.referee) {
-        try { // to embed referee's address into passphrase when there is no need for correct passphrase
-	  passphrase = ethers.utils.getAddress(this.$route.query.referee)
-	} catch(e) {
-	  //do nothing
-	}
-	console.log("passphrase from referee", passphrase)
+      } else {
+        const storedReferee = localStorage.getItem("referID")
+        if(storedReferee !== null) {
+          passphrase = "0x"+storedReferee
+        }
+	console.log("passphrase from referID", passphrase)
       }
       await chequeContract.acceptCheque(cheque.id, passphrase)
     },
@@ -377,13 +376,9 @@ export default {
         return
       }
       var referee = "0x0000000000000000000000000000000000000000"
-      if(this.$route.query.refer && this.$route.params.refer.length != 0) {
-	try {
-	  referee = ethers.utils.getAddress(this.$route.params.refer)
-	} catch (e) {
-	  alert(this.$route.params.refer+" is not an valid address for referee.")
-	  return
-	}
+      const storedReferee = localStorage.getItem("referee")
+      if(storedReferee !== null) {
+        referee = storedReferee
       }
       switchAllow(true, referee)
     },
@@ -392,6 +387,14 @@ export default {
     if (typeof window.ethereum === 'undefined') {
       alertNoWallet()
       return
+    }
+    if(this.$route.query.referee && localStorage.getItem("referee") === null) {
+      try {
+        const referee = ethers.utils.getAddress(this.$route.query.referee)
+	localStorage.setItem("referee", referee)
+      } catch(e) {
+        //do nothing
+      }
     }
     var cfg = localStorage.getItem("cfg-filter_acceptAddrList")
     if(cfg !== null) {

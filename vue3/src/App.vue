@@ -19,6 +19,7 @@
   <span style="color: yellow">S</span>
   </h2>
   <div id="nav" style="font-size: 30px">
+    <router-link to="/airdrop">airdrop</router-link><span style="color: #EEEEEE"> | </span>
     <router-link to="/receive">receive</router-link><span style="color: #EEEEEE"> | </span>
     <router-link to="/write">write</router-link><span style="color: #EEEEEE"> | </span>
     <router-link to="/revoke">revoke</router-link><span style="color: #EEEEEE"> | </span>

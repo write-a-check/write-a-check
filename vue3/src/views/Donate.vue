@@ -1,11 +1,11 @@
 <template>
   <div class="normal">
-   <p>Blockchain cheque is a new idea. We want to promote it through airdrops. At the beginning, we would like to start with $CATS. So if you have some $CATS token, please donate some to this airdrop events. Thank you very much!</p>
+   <p>Blockchain cheque is a new idea. We want to promote it through airdrops. At the beginning, we would like to start with $CATS (address: <span style="user-select: none;">0x265bD28d79400D55a1665707Fa14A72978FA6043</span>). So if you have some $CATS token, please donate some to this airdrop events. Thank you very much!</p>
    <p>The community has donated {{totalDonation}} $CATS to this airdrop project.<a href="https://www.checkbook.cash/donations.html">Here</a> is a full list of donations, which is periodically updated.</p>
    <table style="margin: auto; border-spacing: 15px;">
-   <tr><td><b>Address of $CATS</b><br/>
+   <tr><td><b>Receiver of Donation</b><br/>
    </td>
-   <td>0x265bD28d79400D55a1665707Fa14A72978FA6043</td></tr>
+   <td>0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41</td></tr>
    <tr><td><b>Amount to Donate</b></td>
    <td><input v-model="amount" type="number" placeholder="Please enter a number"></td></tr>
    <tr><td><b>Your name (optional)</b>
@@ -19,7 +19,9 @@
    <div style="margin: auto; width: 40%"><br/>
    <button @click="donate" style="font-size: 24px; width: 300px">Donate</button></div>
    <hr>
-   <p style="text-align: center"><button @click="showLatest" style="font-size: 24px; width: 300px">Show Latest Donations</button></p>
+   <p style="text-align: center">
+   <button @click="showLatest" style="font-size: 24px; width: 300px">Show Latest Donations</button>&nbsp;
+   <a href="https://www.checkbook.cash/donations.html">Full List (periodically updated)</a></p>
    <table border=1>
    <tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>
    <template v-for="(entry, idx) in donations" :keys="entry.id">
