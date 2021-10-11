@@ -290,13 +290,9 @@ export default {
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
       var passphrase = "0x"
       if(cheque.hasPassphrase) {
-        if(cheque.decryptedMemo === undefined) {
-	  alert("Please decrypt the memo first")
-	  return
-	}
-	const salt = cheque.decryptedMemo.substr(0, 16)
         passphrase = prompt("Please enter the secret tag of this check:")
-        passphrase = salt + passphrase
+	console.log("use salt", cheque.salt)
+        passphrase = cheque.salt + passphrase
 	passphrase = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(passphrase)) // double hash
         try {
           await chequeContract.estimateGas.acceptCheque(cheque.id, passphrase)

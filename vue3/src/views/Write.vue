@@ -42,9 +42,8 @@ button {
 
 <script>
 function genRand() {
-      var arr = new Uint8Array(12)
-      window.crypto.getRandomValues(arr)
-      return ethers.utils.base64.encode(arr)
+      var arr = window.crypto.getRandomValues(new Uint8Array(16))
+      return uint8ArrayToHex(arr)
 }
 
 function extractAddrList(text, sep20Address) {
@@ -186,6 +185,7 @@ export default {
 
       var passphraseHashList = []
       var memoEncList = []
+      var salt = ""
       for(var i=0; i<payeeList.length; i++) {
         var memo = this.memo
         if(hasHashTag) {
@@ -197,20 +197,20 @@ export default {
             return
           }
         } else if(hasPassphrase) {
-          const salt = genRand()
+          salt = genRand()
 	  var hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(salt+this.passphrase))
 	  hash = ethers.utils.keccak256(hash) // double hash
 	  hash = "0x00"+hash.substr(4) // force the highest byte to be zero
           passphraseHashList.push(hash)
-          memo = salt+""+memo
+	  console.log("gen salt", salt)
         } else {
           passphraseHashList.push(ethers.utils.parseUnits("0"))
         }
         if(memo.length == 0) {
-          memoEncList.push("0x") // zero-length bytes
+          memoEncList.push("0x"+salt)
         } else {
 	  const encHex = encryptMsgWithKey(memo, encPubkeyList[i])
-          memoEncList.push(encHex)
+          memoEncList.push("0x"+salt+encHex.substr(2))
         }
       }
       if(payeeList.length == 1) {
@@ -234,17 +234,17 @@ export default {
     deadline.setTime(t)
     deadline.setMinutes(deadline.getMinutes() - deadline.getTimezoneOffset())
     this.deadline = deadline.toISOString().slice(0,16)
-    if(this.$route.query.sep20Address) {
-      this.sep20Address = this.$route.query.sep20Address
+    if(this.$route.query.coin) {
+      this.sep20Address = this.$route.query.coin
     }
-    if(this.$route.query.addressList) {
-      this.addressList = this.$route.query.addressList
+    if(this.$route.query.to) {
+      this.addressList = this.$route.query.to
     }
     if(this.$route.query.amount) {
       this.amount = this.$route.query.amount
     }
-    if(this.$route.query.hashtag) {
-      this.passphrase = "#"+this.$route.query.hashtag
+    if(this.$route.query.tag) {
+      this.passphrase = "#"+this.$route.query.tag
     }
     if(this.$route.query.memo) {
       this.memo = this.$route.query.memo

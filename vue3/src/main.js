@@ -172,6 +172,12 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
   cheque.deadlineStr = timestamp2string(cheque.deadline*1000)
   cheque.hasTag = cheque.passphraseHash.substr(2,2) == "23" // 0x23 is '#'
   cheque.hasPassphrase = !(ethers.BigNumber.from(cheque.passphraseHash).isZero() || cheque.hasTag)
+  if(cheque.hasPassphrase) {
+    cheque.salt = cheque.encryptedMemo.substr(2, 32)
+    cheque.encryptedMemo = "0x"+cheque.encryptedMemo.substr(2+32)
+  } else {
+    cheque.salt = ""
+  }
   if(cheque.deadline*1000 <= Date.now()) {
     cheque.status = "expired"
   } else {
