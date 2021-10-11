@@ -22,6 +22,7 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 	const STEPS = 50000
 	var donations = []
 	var dec = new TextDecoder()
+	var total = 0
 	while(toBlock > 0) {
 		filter.toBlock = toBlock
 		filter.fromBlock = Math.max(toBlock-STEPS, 0)
@@ -40,6 +41,7 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 				name: "",
 				comment: "",
 			}
+			total += 1.0*entry.amount
 			var arr = hex2arr(tx.data.slice((4+64)*2+2))
 			if(arr.length != 0) {
 				var len = arr[0]
@@ -54,29 +56,29 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 		}
 		toBlock -= STEPS
 	}
-	return donations
+	return [donations, total]
 }
 
 // ---------------------------------------
 
-const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet")
+const provider = new ethers.providers.JsonRpcProvider("https://global.uat.cash")
 const coinType = "0x265bD28d79400D55a1665707Fa14A72978FA6043"
 const receipt = "0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41"
-const donations = await getDonations(coinType, receipt, provider, 50)
+const [donations, total] = await getDonations(coinType, receipt, provider, 500000)
 donations.sort(function(a,b) {return b.amount - a.amount})
-var content = ["<html><body><p>Here is a list of all the donations to support the airdrop from checkbook.cash.</p>"]
+var content = ["<html><body>"]
+content.push('<p>Please donate on <a href="https://app.checkbook.cash/donate">https://app.checkbook.cash/donate</a>')
+content.push("<p>Here is a list of all the donations to support the airdrop from checkbook.cash.</p>")
 content.push("<p>This list is periodically updated. Last Update Time:&nbsp;"+(new Date).toISOString()+"</p>")
+content.push("<p>Total donated coins: "+total+"</p>")
 content.push("<table border=1>")
 content.push("<tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>")
-var total = 0.0
 for(var i=0; i<donations.length; i++) {
 	content.push("<tr><td>"+donations[i].height+"</td>")
 	content.push("<td>"+donations[i].name+"</td>")
 	content.push("<td>"+donations[i].amount+"</td>")
-	total += 1.0*donations[i].amount
 	content.push('<td><span style="white-space: pre-line">'+donations[i].comment+"</span></td></tr>")
 }
-console.log("total", total)
 content.push("</table></body></html>")
 fs.writeFile("donations.html", content.join("\n"), function (err,data) {
   if (err) {
