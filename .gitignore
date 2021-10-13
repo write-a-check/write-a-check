@@ -13,3 +13,5 @@ cache/
 artifacts/
 .idea/
 check-donation/donations.html
+utils/key.txt
+utils/donations.html
