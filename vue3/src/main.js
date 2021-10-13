@@ -114,7 +114,7 @@ window.strToBytes32Hex = function(s) {
 
 window.uint8ArrayFromHex = function(s) {
   var u8arr = new Uint8Array(Math.ceil(s.length / 2)-1);
-  var end = 0
+  var end = u8arr.length
   for (var i = 0; i < u8arr.length; i++) {//
     u8arr[i] = parseInt(s.substr(2/*ignore the leading '0x'*/+i*2, 2), 16);
     if(u8arr[i] == 0) {
