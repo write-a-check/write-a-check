@@ -170,6 +170,16 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
   cheque.deadline = ethers.BigNumber.from("0x"+startAndEndTime.substr(24*2, 8*2)).toNumber()
   cheque.startTimeStr = timestamp2string(cheque.startTime*1000)
   cheque.deadlineStr = timestamp2string(cheque.deadline*1000)
+  var totalSec = cheque.deadline - Math.floor(Date.now()/1000)
+  if(totalSec > 0) {
+    const dayCount = Math.floor(totalSec/(24*3600.0))
+    const hourCount = Math.floor((totalSec-dayCount*24*3600.0)/3600.0)
+    const minuteCount = Math.floor((totalSec-dayCount*24*3600.0-hourCount*3600.0)/60.0)
+    cheque.remainTime = ""
+    if(dayCount > 0) {cheque.remainTime += dayCount+(dayCount==1 ? " Day " : " Days ")}
+    if(hourCount > 0) {cheque.remainTime += hourCount+(hourCount==1 ? " Hour " : " Hours ")}
+    if(minuteCount > 0) {cheque.remainTime += minuteCount+(minuteCount==1 ? " Minute" : " Minutes")}
+  }
   cheque.hasTag = cheque.passphraseHash.substr(2,2) == "23" // 0x23 is '#'
   cheque.hasPassphrase = !(ethers.BigNumber.from(cheque.passphraseHash).isZero() || cheque.hasTag)
   if(cheque.hasPassphrase) {

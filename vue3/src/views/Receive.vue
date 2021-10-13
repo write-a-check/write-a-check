@@ -30,10 +30,14 @@
 
     <input v-model="onlyActive" type="checkbox" style="width: 20px; height: 20px" checked>
     Only show active checks (not been accepted, refused, nor expired, i.e. passed deadline).<br/>
+
+    <input v-model="verboseMode" type="checkbox" style="width: 20px; height: 20px" checked>
+    Verbose Mode (show the cheque's sender, issue time and token's address).<br/>
     </div>
 
     <hr/>
 
+    <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
     <p v-show="doAll">
     <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -41,17 +45,18 @@
     </p>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
-    From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;Status:&nbsp;<b>{{cheque.status}}</b><br/>
-    Value: <b>{{cheque.amount}} {{cheque.coinSymbol}}</b>({{cheque.coinType}})<br/>
-    Start: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    <span v-if="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
-    Memo:
-    <span v-if="cheque.withMemo">
+    Status:&nbsp;<b>{{cheque.status}}</b> Value: <b>{{cheque.amount}} {{cheque.coinSymbol}}</b>&nbsp;
+    <span v-show="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
+    <span v-show="verboseMode">
+    From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
+    Token Address: {{cheque.coinType}}<br/>
+    Issue Time: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+    </span>
+    Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
+    <span v-show="cheque.status=='active'">Remain: {{cheque.remainTime}}</span><br/>
+    <span v-show="cheque.withMemo">Memo:
     <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" v-bind:name="cheque.encryptedMemo" href="javascript:">
-    Click here to decrypt the memo</a></span>
-    <span v-else style="color: grey"><i>this check has no memo</i></span>
-    <br/>
+    Click here to decrypt the memo</a><br/></span>
     <p v-if="cheque.status=='active'" style="text-align: right">
     <button @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
     <button @click="accept" v-bind:name="cheque.id">Accept</button>
@@ -124,7 +129,7 @@ function filterCheques(chequeList, cfg) {
   return newList
 }
 
-async function getChequeList(cfg) {
+async function getChequeList() {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const myAddr = await signer.getAddress()
@@ -170,7 +175,7 @@ async function getChequeList(cfg) {
 	  cheque.status = "refused"
 	}
       }
-      return filterCheques(chequeList, cfg)
+      return chequeList
 }
 
 export default {
@@ -194,6 +199,8 @@ export default {
       showTotalCoins: false,
       totalCoins: 0,
       coinSymbol: "",
+      verboseMode: false,
+      inactiveChequeInstead: false,
       chequeList: []
     }
   },
@@ -231,7 +238,8 @@ export default {
         alert('Hashtag is too long: "'+this.hashtag+'"')
 	return
       }
-      var chequeList = await getChequeList({
+      var chequeList0 = await getChequeList()
+      var cfg = {
         "filter_acceptAddrList": this.filter_acceptAddrList,
         "acceptAddrList": this.acceptAddrList,
         "filter_denyAddrList": this.filter_denyAddrList,
@@ -243,7 +251,18 @@ export default {
         "filter_hashtag": this.filter_hashtag,
         "hashtag": hashtagHex,
 	"onlyActive": this.onlyActive
-      })
+      }
+      var chequeList =  filterCheques(chequeList0, cfg)
+      if(chequeList.length == 0 && cfg.onlyActive) {
+        cfg.onlyActive = false
+        chequeList =  filterCheques(chequeList0, cfg)
+	if(chequeList != 0) {
+	  this.inactiveChequeInstead = true
+	}
+	if(chequeList.length > 5) {
+	  chequeList = chequeList.slice(chequeList.length-5, chequeList.length)
+	}
+      }
       this.showTotalCoins = this.filter_sep20Address
       if(this.filter_sep20Address) {
         this.coinSymbol = symbol
@@ -257,7 +276,7 @@ export default {
       }
       chequeList.sort(function(a,b) {return a.deadline - b.deadline})
       this.chequeNotFound = chequeList.length == 0
-      this.doAll = chequeList.length != 0
+      this.doAll = chequeList.length != 0 && !this.inactiveChequeInstead
       this.chequeList = chequeList
     },
     async decrypt(event) {
