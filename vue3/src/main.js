@@ -240,6 +240,10 @@ window.RefuseCheque = ethers.utils.id("RefuseCheque(address,uint256,address)")
 // const SetEncryptionPubkey = ethers.utils.id("SetEncryptionPubkey(address,address,uint256)")
 // const UnsetEncryptionPubkey = ethers.utils.id("UnsetEncryptionPubkey(address)")
 
+if(screen.height > screen.width) { // for phone
+   document.getElementById("app").style.zoom = 0.8
+}
+
 createApp(App).use(router).mount('#app')
 
 // Account1: 0x5637c9fbFf9FAf5f534d0a88199feCD97357635B
