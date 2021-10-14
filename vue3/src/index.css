@@ -5,7 +5,8 @@
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
-  zoom: 0.55; 
+  transform: scale(0.55);
+  transform-origin: 0 0;
 }
 
 nav li:hover,

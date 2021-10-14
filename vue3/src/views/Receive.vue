@@ -45,7 +45,9 @@
     </p>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
-    Status:&nbsp;<b>{{cheque.status}}</b> Value: <b>{{cheque.amount}} {{cheque.coinSymbol}}</b>&nbsp;
+    Status:&nbsp;<b>{{cheque.status}}</b> 
+    Value: <b>{{cheque.amount}} <a :href="cheque.coinURL" target="_blank">{{cheque.coinSymbol}}</a></b>&nbsp;
+    <button @click="addToWallet" :id="cheque.coinType" :name="cheque.coinSymbol" style="font-size: 14px">watch {{cheque.coinSymbol}}</button><br>
     <span v-show="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
     <span v-show="verboseMode">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
@@ -338,7 +340,22 @@ export default {
       const gasPrice = ethers.BigNumber.from("0x3e63fa64")
       await chequeContract.acceptCheque(cheque.id, passphrase, {gasPrice: gasPrice})
     },
-
+    async addToWallet(event) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const sep20Contract = new ethers.Contract(event.target.id, SEP20ABI, provider)
+      const decimals = await sep20Contract.decimals()
+      await ethereum.request({
+        method: 'wallet_watchAsset',
+        params: {
+          type: 'ERC20',
+          options: {
+            address: event.target.id,
+	    symbol: event.target.name,
+	    decimals: decimals,
+          },
+        },
+      })
+    },
     async refuse(event) {
       const ok = confirm("Are you sure to refuse this cheque and give up the coins in it?")
       if(!ok) {

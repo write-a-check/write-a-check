@@ -19,7 +19,6 @@
   <span style="color: yellow">S</span>
   </h2>
   <div id="nav" style="font-size: 24px; width: 600px; margin: auto">
-    <router-link style="text-decoration: none;" tag="li" active-class="active" to="/airdrop">airdrop</router-link><span style="color: #EEEEEE"> | </span>
     <router-link style="text-decoration: none;" tag="li" active-class="active" to="/receive">receive</router-link><span style="color: #EEEEEE"> | </span>
     <router-link style="text-decoration: none;" tag="li" active-class="active" to="/write">write</router-link><span style="color: #EEEEEE"> | </span>
     <router-link style="text-decoration: none;" tag="li" active-class="active" to="/revoke">revoke</router-link><span style="color: #EEEEEE"> | </span>

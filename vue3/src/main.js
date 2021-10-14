@@ -162,6 +162,7 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
     cheque.encryptedMemo = "0x"
   }
   cheque.coinType = ethers.utils.getAddress("0x"+coinTypeAndAmount.substr(0, 20*2))
+  cheque.coinURL = "https://www.smartscan.cash/address/"+cheque.coinType
   const [symbol, decimals] = await getCoinSymbolAndDecimals(coinInfoMap, cheque.coinType)
   cheque.coinSymbol = symbol
   const amt = ethers.BigNumber.from("0x"+coinTypeAndAmount.substr(20*2, 12*2))
@@ -254,7 +255,7 @@ function IsPC() {
 }
 
 if(IsPC()) {
-   document.getElementById("app").style.zoom = 1.2
+   document.getElementById("app").style.transform = "scale(1.0)"
 }
 
 createApp(App).use(router).mount('#app')
