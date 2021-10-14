@@ -235,8 +235,8 @@ export default {
 	}
         await chequeContract.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
 			passphraseHashList, memoEncList, {value: value})
-        this.isSubmitting = false
       }
+      this.isSubmitting = false
     },
   },
   async mounted() {

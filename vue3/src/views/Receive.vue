@@ -40,10 +40,8 @@
     <p v-show="chequeNotFound">No cheque found</p>
     <p v-show="doAll">
     <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>
-    <!-- Some bugs here, disabled
-    <br>
+    <br><br>
     <button @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button>
-    -->
     </p>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
@@ -51,7 +49,7 @@
     <span v-show="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
     <span v-show="verboseMode">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
-    Token Address: {{cheque.coinType}}<br/>
+    Address of {{cheque.coinSymbol}}: {{cheque.coinType}}<br/>
     Issue Time: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
     </span>
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
@@ -393,7 +391,7 @@ export default {
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
       console.log("idList", idList)
-      await chequeContract.acceptCheques(idList)
+      await chequeContract.acceptCheques(idList, "0x")
     },
     async checkAllow() {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
