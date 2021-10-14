@@ -26,7 +26,7 @@
    placeholder="Please enter some text to explain what is the purpose of this check."></textarea></td></tr>
    </table>
    <div style="margin: auto; width: 40%"><br/>
-   <button @click="submit" style="font-size: 24px; width: 300px">Submit</button></div>
+   <button @click="submit" style="font-size: 24px; width: 300px" :disabled="isSubmitting">Submit</button></div>
   </div>
 </template>
 
@@ -74,6 +74,7 @@ export default {
       isRealPassphrase: false,
       deadline: "",
       addressList: [],
+      isSubmitting: false,
       memo: ""
     }
   },
@@ -89,6 +90,7 @@ export default {
         alertNoWallet()
         return
       }
+      this.isSubmitting = true
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
@@ -109,6 +111,7 @@ export default {
       }
       if(payeeList.length == 0) {
         alert("Cannot find valid payees.")
+        this.isSubmitting = false
 	return
       }
 
@@ -133,6 +136,7 @@ export default {
 
       const [coinType, symbol] = await getSEP20AddrAndSymbol(this.sep20Address)
       if(coinType === null) {
+        this.isSubmitting = false
         return
       }
 
@@ -147,16 +151,19 @@ export default {
 	allowance = ethers.utils.formatUnits(allowanceAmt, decimals)
       } catch(e) {
         alert("Not an SEP20 Address: "+coinType)
+        this.isSubmitting = false
 	return
       }
 
       const deadline = new Date(this.deadline).getTime()
       if(deadline < Date.now()) {
         alert("Deadline should be later than current.")
+        this.isSubmitting = false
 	return
       }
       if(deadline > Date.now() + 30*24*3600*1000) {
         alert("Deadline should be within 30 days.")
+        this.isSubmitting = false
 	return
       }
       const deadlineTimestamp =  deadline / 1000
@@ -164,6 +171,7 @@ export default {
       var totalAmount = this.amount*payeeList.length
       if(balance < totalAmount) {
         alert("You do not own enough "+symbol+" to send! "+payeeList.length+" payees needs "+totalAmount+" and you only have "+balance)
+        this.isSubmitting = false
         return
       }
       if(this.sep20Address != SEP206Address && allowance < totalAmount) {
@@ -173,6 +181,7 @@ export default {
 	  alert("Transaction for approving will be sent. Please retry after it succeeds.")
           sep20Contract.connect(signer).approve(ChequeContractAddress, maxAmount)
 	}
+        this.isSubmitting = false
 	return
       }
 
@@ -193,6 +202,7 @@ export default {
             passphraseHashList.push(hex)
           } else {
             alert('The tag "'+this.passphrase+'" is too long')
+            this.isSubmitting = false
             return
           }
         } else if(hasPassphrase) {
@@ -220,10 +230,12 @@ export default {
 			passphraseHashList, memoEncList, {value: value})
 	if(gas>7000000) {
 	  alert("The count of payees is too large("+gas+"). Your transaction may fail because of high gas. Please reduce the count.")
+          this.isSubmitting = false
 	  return
 	}
         await chequeContract.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
 			passphraseHashList, memoEncList, {value: value})
+        this.isSubmitting = false
       }
     },
   },

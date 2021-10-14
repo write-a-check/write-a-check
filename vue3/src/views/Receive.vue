@@ -39,8 +39,11 @@
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
     <p v-show="doAll">
-    <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>
+    <!-- Some bugs here, disabled
+    <br>
     <button @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button>
+    -->
     </p>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
@@ -374,13 +377,14 @@ export default {
         alert("Found no active checks without secret tags.")
 	return
       } else if(idList.length > 50) {
-        alert("Too many cheques to accept. We can just refuse the first 50 cheques.")
+        alert("Too many cheques to accept. We can just accept the first 50 cheques.")
 	idList = idList.slice(0, 50)
       }
 
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
+      console.log("idList", idList)
       await chequeContract.acceptCheques(idList)
     },
     async checkAllow() {
