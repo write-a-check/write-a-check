@@ -240,8 +240,21 @@ window.RefuseCheque = ethers.utils.id("RefuseCheque(address,uint256,address)")
 // const SetEncryptionPubkey = ethers.utils.id("SetEncryptionPubkey(address,address,uint256)")
 // const UnsetEncryptionPubkey = ethers.utils.id("UnsetEncryptionPubkey(address)")
 
-if(screen.height > screen.width) { // for phone
-   document.getElementById("app").style.zoom = 0.8
+function IsPC() {
+       var userAgentInfo = navigator.userAgent;
+       var Agents = new Array("Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod");
+       var flag = true;
+       for (var v = 0; v < Agents.length; v++) {
+            if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                flag = false;
+                break;
+             }
+       }
+       return flag;
+}
+
+if(IsPC()) {
+   document.getElementById("app").style.zoom = 1.2
 }
 
 createApp(App).use(router).mount('#app')

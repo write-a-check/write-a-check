@@ -244,7 +244,10 @@ export default {
         alert('Hashtag is too long: "'+this.hashtag+'"')
 	return
       }
+      this.doAll = false
+      this.chequeList = []
       this.isLoading = true
+      this.inactiveChequeInstead = false
       var chequeList0 = await getChequeList()
       var cfg = {
         "filter_acceptAddrList": this.filter_acceptAddrList,
@@ -334,10 +337,15 @@ export default {
         }
 	console.log("passphrase from referID", passphrase)
       }
-      await chequeContract.acceptCheque(cheque.id, passphrase)
+      const gasPrice = ethers.BigNumber.from("0x3e63fa64")
+      await chequeContract.acceptCheque(cheque.id, passphrase, {gasPrice: gasPrice})
     },
 
     async refuse(event) {
+      const ok = confirm("Are you sure to refuse this cheque and give up the coins in it?")
+      if(!ok) {
+        return
+      }
       const result = this.chequeList.filter(cheque => cheque.id == event.target.name);
       if(result.length != 1) return
       const cheque = result[0]

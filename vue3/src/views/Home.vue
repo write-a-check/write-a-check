@@ -1,6 +1,7 @@
 <template>
   <div class="normal">
     <p style="text-align: center"><img width="360" src="/favicon.svg"></p>
+    <p>You can learn more about blockchain cheques on <a href="https://www.checkbook.cash/">www.checkbook.cash</a>, especially the blogs on its <a href="https://www.checkbook.cash/posts/hello-world-from-blockchain-cheques">basic</a> and <a href="https://www.checkbook.cash/posts/other-usages-of-blockchain-cheques">extended</a> use cases.</p>
     <p>With this DApp, you can <a @click.stop.prevent="write" href="">write a check</a> to a payee, or <a @click.stop.prevent="revoke" href="">revoke expired checks</a> sent by you. You can also <a @click.stop.prevent="receive" href="">receive checks</a> sent to you.</p>
     <p>This is a <a href="https://www.puredapp.org">Pure DApp</a>, which means its contract code and front-end code are both opensource and anyone can deploy them at anywhere.</p>
     <p v-if="allowed"><b>Currently, you have allowed checks with memos sent to you.
