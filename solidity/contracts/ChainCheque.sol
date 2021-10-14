@@ -158,10 +158,9 @@ abstract contract ChainChequeBase {
 		emit RevokeCheque(address(uint160(id>>96)), id, cheque.drawer);
 	}
 
-	function acceptCheques(uint[] calldata idList) external {
-		bytes memory zeroLenBz = new bytes(0);
+	function acceptCheques(uint[] calldata idList, bytes calldata passphrase) external {
 		for(uint i=0; i<idList.length; i++) {
-			receiveCheque(idList[i], true, zeroLenBz);
+			receiveCheque(idList[i], true, passphrase);
 		}
 	}
 
