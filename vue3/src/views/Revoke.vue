@@ -2,9 +2,10 @@
   <div class="normal">
     <h5>Here you can list all the checks sent by you, and revoke the expired ones (which have passed the deadline)</h5>
     <p style="text-align: center">
-    <button @click="list" style="width: 280px">List checks sent by me</button>
+    <button @click="list" :disabled="isLoading" style="width: 280px">List checks sent by me</button>
     </p>
     <hr/>
+    <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
     <p v-show="chequeNotFound">No cheque found</p>
     <p v-show="canRevoke" style="text-align: center">
     <button @click="revoke" style="width: 280px">Revoke all expired checks</button>
@@ -75,11 +76,13 @@ export default {
       chequeNotFound: false,
       canRevoke: false,
       revokableIdList: [],
+      isLoading: false,
       chequeList: []
     }
   },
   methods: {
     async list() {
+      this.isLoading = true
       var chequeList = await getChequeList()
       chequeList.sort(function(a,b) {return a.deadline - b.deadline})
       this.chequeNotFound = chequeList.length == 0
@@ -93,6 +96,7 @@ export default {
       }
       this.canRevoke = idList.length != 0
       this.revokableIdList = idList
+      this.isLoading = false
     },
     async revoke() {
       if(this.revokableIdList.length == 0) {
