@@ -7,20 +7,20 @@
    </td>
    <td>0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41</td></tr>
    <tr><td><b>Amount to Donate</b></td>
-   <td><input v-model="amount" type="number" placeholder="Please enter a number"></td></tr>
+   <td><input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
    <tr><td><b>Your name (optional)</b>
    </td>
-   <td><input v-model="donator" type="text">
+   <td><input v-model="donator" class="userinput" type="text">
    </td></tr>
    <tr><td><b>Your comment (optional)</b>
    </td>
-   <td><textarea v-model="comment" rows="10" cols="40"></textarea></td></tr>
+   <td><textarea v-model="comment" class="userinput" rows="10" cols="40"></textarea></td></tr>
    </table>
    <div style="margin: auto; width: 40%"><br/>
    <button @click="donate" style="font-size: 24px; width: 300px">Donate</button></div>
    <hr>
    <p style="text-align: center">
-   <button @click="showLatest" style="font-size: 24px; width: 300px">Show Latest Donations</button>&nbsp;
+   <button @click="showLatest" :disabled="isLoading" style="font-size: 24px; width: 300px">Show Latest Donations</button>&nbsp;
    <a href="https://www.checkbook.cash/donations.html">Full List (periodically updated)</a></p>
    <table border=1>
    <tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>
@@ -33,10 +33,6 @@
 </template>
 
 <style>
-textarea, input {
-    font-size:20px;
-    width: 560px;
-}
 p {
     text-align: center;
 }
@@ -111,6 +107,7 @@ export default {
       donations: [],
       amount: 0,
       donator: "",
+      isLoading: false,
       comment: ""
     }
   },
@@ -168,6 +165,7 @@ export default {
         alertNoWallet()
         return
       }
+      this.isLoading = true
       this.donations = []
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
@@ -175,15 +173,18 @@ export default {
       const decimals = await sep20Contract.decimals()
       this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
       this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
+      this.isLoading = false
     }
   },
   async mounted() {
+    this.isLoading = true
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
     const balanceAmt = await sep20Contract.balanceOf(this.receipt)
     const decimals = await sep20Contract.decimals()
     this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
     this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
+    this.isLoading = false
   }
 }
 </script>

@@ -1,24 +1,21 @@
 <template>
   <div class="normal">
     <p style="text-align: center">
-    <button @click="list" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
     <button @click="toggle" style="width: 180px">{{toggleBtnText}}</button>
     </p>
 
     <div v-show="showOptions">
-    <table><tr><td>
     <input v-model="filter_acceptAddrList" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks which are sent from:<br/>
     <textarea v-model="acceptAddrList" style="width: 500px; font-size: 16px" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
-    </td><td>
     <input v-model="filter_denyAddrList" type="checkbox" style="width: 20px; height: 20px" >
     Do NOT show checks which are sent from:<br/>
     <textarea v-model="denyAddrList" style="width: 500px; font-size: 16px" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
-    </td></tr></table>
 
     <input v-model="filter_sep20Address" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks of this coin:
-    <input v-model="sep20Address" type="text" style="width: 608px" placeholder="Enter an SEP20 token's symbol or address"><br/>
+    <input v-model="sep20Address" type="text" style="width: 500px" placeholder="Enter an SEP20 token's symbol or address"><br/>
 
     <input v-model="filter_minAmount" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks whose amounts are no less than
@@ -37,6 +34,7 @@
 
     <hr/>
 
+    <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
     <p v-show="doAll">
@@ -65,6 +63,9 @@
     </template>
   </div>
 </template>
+
+<style>
+</style>
 
 <script>
 // A cheque's properties:
@@ -201,6 +202,7 @@ export default {
       coinSymbol: "",
       verboseMode: false,
       inactiveChequeInstead: false,
+      isLoading: false,
       chequeList: []
     }
   },
@@ -238,6 +240,7 @@ export default {
         alert('Hashtag is too long: "'+this.hashtag+'"')
 	return
       }
+      this.isLoading = true
       var chequeList0 = await getChequeList()
       var cfg = {
         "filter_acceptAddrList": this.filter_acceptAddrList,
@@ -278,6 +281,7 @@ export default {
       this.chequeNotFound = chequeList.length == 0
       this.doAll = chequeList.length != 0 && !this.inactiveChequeInstead
       this.chequeList = chequeList
+      this.isLoading = false
     },
     async decrypt(event) {
       const result = this.chequeList.filter(cheque => cheque.id == event.target.id);
