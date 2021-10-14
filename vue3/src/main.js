@@ -255,7 +255,7 @@ function IsPC() {
 }
 
 if(IsPC()) {
-   document.getElementById("app").style.transform = "scale(1.0)"
+   document.getElementById("app").style.zoom = 1.2
 }
 
 createApp(App).use(router).mount('#app')
