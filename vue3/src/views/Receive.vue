@@ -1,5 +1,6 @@
 <template>
   <div class="normal">
+    <br>
     <p style="text-align: center">
     <button @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
     <button @click="toggle" style="width: 180px">{{toggleBtnText}}</button>

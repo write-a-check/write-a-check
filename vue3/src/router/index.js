@@ -17,6 +17,8 @@ const routes = [
   { path: "/revoke", component: Revoke }]
 
 const router = createRouter({
+  linkActiveClass: "active",
+  linkExactActiveClass: "exact-active",
   history: createWebHistory(process.env.BASE_URL),
   routes
 })

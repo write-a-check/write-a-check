@@ -1,5 +1,5 @@
 <template>
-  <h2 style="background: lightgrey; width: 360px; margin: auto; border-radius: 25px;">
+  <h2 style="background: lightgrey; width: 360px; margin: auto; border-radius: 25px; text-align: center;">
   <span style="color: red">B</span>
   <span style="color: orange">L</span>
   <span style="color: yellow">O</span>
@@ -19,12 +19,12 @@
   <span style="color: yellow">S</span>
   </h2>
   <div id="nav" style="font-size: 24px; width: 600px; margin: auto">
-    <router-link to="/airdrop">airdrop</router-link><span style="color: #EEEEEE"> | </span>
-    <router-link to="/receive">receive</router-link><span style="color: #EEEEEE"> | </span>
-    <router-link to="/write">write</router-link><span style="color: #EEEEEE"> | </span>
-    <router-link to="/revoke">revoke</router-link><span style="color: #EEEEEE"> | </span>
-    <router-link to="/donate">donate</router-link><span style="color: #EEEEEE"> | </span>
-    <router-link to="/about">about</router-link>
+    <router-link style="text-decoration: none;" tag="li" active-class="active" to="/airdrop">airdrop</router-link><span style="color: #EEEEEE"> | </span>
+    <router-link style="text-decoration: none;" tag="li" active-class="active" to="/receive">receive</router-link><span style="color: #EEEEEE"> | </span>
+    <router-link style="text-decoration: none;" tag="li" active-class="active" to="/write">write</router-link><span style="color: #EEEEEE"> | </span>
+    <router-link style="text-decoration: none;" tag="li" active-class="active" to="/revoke">revoke</router-link><span style="color: #EEEEEE"> | </span>
+    <router-link style="text-decoration: none;" tag="li" active-class="active" to="/donate">donate</router-link><span style="color: #EEEEEE"> | </span>
+    <router-link style="text-decoration: none;" tag="li" active-class="active" to="/about">about</router-link>
   </div>
   <router-view/>
 </template>

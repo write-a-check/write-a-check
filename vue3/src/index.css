@@ -7,6 +7,17 @@
   margin-top: 60px;
 }
 
+nav li:hover,
+nav li.router-link-active,
+nav li.router-link-exact-active {
+  background-color: indianred;
+  cursor: pointer;
+}
+
+li a {
+    text-decoration: none;
+}
+
 .userinput {
     font-size:16px;
     width: 360px;
