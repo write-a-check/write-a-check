@@ -30,7 +30,11 @@
     Only show active checks (not been accepted, refused, nor expired, i.e. passed deadline).<br/>
 
     <input v-model="verboseMode" type="checkbox" style="width: 20px; height: 20px" checked>
-    Verbose Mode (show the cheque's sender, issue time and token's address).<br/>
+    Verbose Mode (show the cheque's sender, issue time and id).<br/>
+
+    <input v-model="use_otherAddr" type="checkbox" style="width: 20px; height: 20px" >
+    List the cheques to following address instead of my own address:
+    <input v-model="otherAddr" type="text" style="width: 435px"><br/>
     </div>
 
     <hr/>
@@ -38,7 +42,7 @@
     <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
-    <p v-show="doAll">
+    <p v-show="doAll && !use_otherAddr">
     <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>
     <br><br>
     <button @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button>
@@ -51,7 +55,7 @@
     <span v-show="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
     <span v-show="verboseMode">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
-    Address of {{cheque.coinSymbol}}: {{cheque.coinType}}<br/>
+    Cheque ID: {{cheque.id}}<br/>
     Issue Time: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
     </span>
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
@@ -59,7 +63,7 @@
     <span v-show="cheque.withMemo">Memo:
     <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" v-bind:name="cheque.encryptedMemo" href="javascript:">
     Click here to decrypt the memo</a><br/></span>
-    <p v-if="cheque.status=='active'" style="text-align: right">
+    <p v-if="cheque.status=='active' && !use_otherAddr" style="text-align: right">
     <button @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
     <button @click="accept" v-bind:name="cheque.id">Accept</button>
     </p>
@@ -134,10 +138,13 @@ function filterCheques(chequeList, cfg) {
   return newList
 }
 
-async function getChequeList() {
+async function getChequeList(myAddr) {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
-      const myAddr = await signer.getAddress()
+      if(myAddr.length == 0) {
+        myAddr = await signer.getAddress()
+      }
+      console.log("myAddr", myAddr)
       const myAddrPad32 = ethers.utils.hexZeroPad(myAddr, 32)
       var chequeList = []
       var coinInfoMap = new Map()
@@ -207,6 +214,8 @@ export default {
       verboseMode: false,
       inactiveChequeInstead: false,
       isLoading: false,
+      use_otherAddr: false,
+      otherAddr: "",
       chequeList: []
     }
   },
@@ -216,8 +225,7 @@ export default {
       this.toggleBtnText = this.showOptions? "Hide Options" : "Show Options"
     },
     async list() {
-      if (typeof window.ethereum === 'undefined') {
-        alertNoWallet()
+      if(!connectWallet()) {
         return
       }
       //this.checkAllow()
@@ -244,11 +252,20 @@ export default {
         alert('Hashtag is too long: "'+this.hashtag+'"')
 	return
       }
+      var myAddr = ""
+      if(this.use_otherAddr) {
+        try {
+	  myAddr = ethers.utils.getAddress(this.otherAddr)
+	} catch(e) {
+	  alert("Invalid Address: "+this.otherAddr)
+	  return
+	}
+      }
       this.doAll = false
       this.chequeList = []
       this.isLoading = true
       this.inactiveChequeInstead = false
-      var chequeList0 = await getChequeList()
+      var chequeList0 = await getChequeList(myAddr)
       var cfg = {
         "filter_acceptAddrList": this.filter_acceptAddrList,
         "acceptAddrList": this.acceptAddrList,
@@ -431,10 +448,6 @@ export default {
     },
   },
   async mounted() {
-    if (typeof window.ethereum === 'undefined') {
-      alertNoWallet()
-      return
-    }
     if(this.$route.query.referee && localStorage.getItem("referee") === null) {
       try {
         const referee = ethers.utils.getAddress(this.$route.query.referee)

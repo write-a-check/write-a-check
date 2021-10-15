@@ -113,8 +113,7 @@ export default {
   },
   methods: {
     async donate() {
-      if (typeof window.ethereum === 'undefined') {
-        alertNoWallet()
+      if(!connectWallet()) {
         return
       }
       const provider = new ethers.providers.Web3Provider(window.ethereum)

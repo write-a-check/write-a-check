@@ -23,7 +23,7 @@
    <tr><td><b>Memo</b>
    (It will be encrypted by the payee's public key and only the payee can decrypt)</td>
    <td><textarea v-model="memo" class="userinput" rows="10" cols="40"
-   placeholder="Please enter some text to explain what is the purpose of this check."></textarea></td></tr>
+   placeholder="Please enter some text to explain what is the purpose of this check. Leave here black if you have nothing to explain, or the receiver has not allowed encrypted memos."></textarea></td></tr>
    </table>
    <div style="margin: auto; width: 40%"><br/>
    <button @click="submit" style="font-size: 24px; width: 300px" :disabled="isSubmitting">Submit</button></div>
@@ -86,8 +86,7 @@ export default {
        this.sep20Address = SEP206Address
     },
     async submit() {
-      if (typeof window.ethereum === 'undefined') {
-        alertNoWallet()
+      if(!connectWallet()) {
         return
       }
       this.isSubmitting = true

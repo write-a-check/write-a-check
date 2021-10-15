@@ -82,6 +82,9 @@ export default {
   },
   methods: {
     async list() {
+      if(!connectWallet()) {
+        return
+      }
       this.isLoading = true
       var chequeList = await getChequeList()
       chequeList.sort(function(a,b) {return a.deadline - b.deadline})
@@ -99,6 +102,9 @@ export default {
       this.isLoading = false
     },
     async revoke() {
+      if(!connectWallet()) {
+        return
+      }
       if(this.revokableIdList.length == 0) {
         alert("Cannot find expired checks")
 	return
@@ -114,10 +120,6 @@ export default {
     },
   },
   async mounted() {
-    if (typeof window.ethereum === 'undefined') {
-      alertNoWallet()
-      return
-    }
   }
 }
 </script>

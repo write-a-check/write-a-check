@@ -40,7 +40,7 @@ window.alertNoWallet = () => {
       alert("No wallet installed! Please install MetaMask or other web3 wallet to use this App.");
 }
 
-async function connectWallet() {
+window.connectWallet = async function() {
    if (typeof window.ethereum === 'undefined') {
       if (typeof window.web3 !== 'undefined') {
           window.ethereum = window.web3
@@ -54,14 +54,14 @@ async function connectWallet() {
               window.ethereum = provider
           } else {
               alertNoWallet()
+	      return false
           }
       }
    } else {
-      ethereum.request({ method: 'eth_requestAccounts' })
+      await ethereum.request({ method: 'eth_requestAccounts' })
    }
+   return true
 }
-
-connectWallet()
 
 window.getSEP20AddrAndSymbol = async function(line) {
       var trimmed = line.trim()
