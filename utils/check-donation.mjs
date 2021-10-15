@@ -74,6 +74,7 @@ content.push("<p>Total donated coins: "+total+"</p>")
 content.push("<table border=1>")
 content.push("<tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>")
 for(var i=0; i<donations.length; i++) {
+	if(donations[i].amount <= 1) {continue}
 	content.push("<tr><td>"+donations[i].height+"</td>")
 	content.push("<td>"+donations[i].name+"</td>")
 	content.push("<td>"+donations[i].amount+"</td>")
