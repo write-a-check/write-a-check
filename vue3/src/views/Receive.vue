@@ -52,11 +52,11 @@
     Status:&nbsp;<b>{{cheque.status}}</b> 
     Value: <b>{{cheque.amount}} <a :href="cheque.coinURL" target="_blank">{{cheque.coinSymbol}}</a></b>&nbsp;
     <button @click="addToWallet" :id="cheque.coinType" :name="cheque.coinSymbol" style="font-size: 14px">watch {{cheque.coinSymbol}}</button><br>
-    <span v-show="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
+    <span v-show="cheque.hasTag">Tag: {{cheque.tag}}<br></span>
     <span v-show="verboseMode">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
     Cheque ID: {{cheque.id}}<br/>
-    Issue Time: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+    Issue Time: {{cheque.startTimeStr}}<br/>
     </span>
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
     <span v-show="cheque.status=='active'">Remain: {{cheque.remainTime}}</span><br/>
