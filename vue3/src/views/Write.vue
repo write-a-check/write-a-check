@@ -192,7 +192,6 @@ export default {
 
       var passphraseHashList = []
       var memoEncList = []
-      var salt = ""
       for(var i=0; i<payeeList.length; i++) {
         var memo = this.memo
         if(hasHashTag) {
@@ -205,7 +204,7 @@ export default {
             return
           }
         } else if(hasPassphrase) {
-          salt = genRand()
+          const salt = deadlineTimestamp.toString()+" "+payeeList[i].substr(2)+" "
 	  var hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(salt+this.passphrase))
 	  hash = ethers.utils.keccak256(hash) // double hash
 	  hash = "0x00"+hash.substr(4) // force the highest byte to be zero
@@ -215,10 +214,10 @@ export default {
           passphraseHashList.push(ethers.utils.parseUnits("0"))
         }
         if(memo.length == 0) {
-          memoEncList.push("0x"+salt)
+          memoEncList.push("0x")
         } else {
 	  const encHex = encryptMsgWithKey(memo, encPubkeyList[i])
-          memoEncList.push("0x"+salt+encHex.substr(2))
+          memoEncList.push("0x"+encHex.substr(2))
         }
       }
       if(payeeList.length == 1) {
