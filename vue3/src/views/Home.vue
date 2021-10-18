@@ -4,7 +4,7 @@
     <p>You can learn more about blockchain cheques on <a href="https://www.checkbook.cash/">www.checkbook.cash</a>, especially the blogs on its <a href="https://www.checkbook.cash/posts/hello-world-from-blockchain-cheques">basic</a> and <a href="https://www.checkbook.cash/posts/other-usages-of-blockchain-cheques">extended</a> use cases.</p>
     <p>With this DApp, you can <a @click.stop.prevent="write" href="">write a check</a> to a payee, or <a @click.stop.prevent="revoke" href="">revoke expired checks</a> sent by you. You can also <a @click.stop.prevent="receive" href="">receive checks</a> sent to you.</p>
     <p v-if="allowed"><b>Currently, you have enabled memo-encryption.
-    You can <button @click="refuse" href="">disable</button> memo-encryption now. ${{myAddress}} is your current account.</b></p>
+    You can <button @click="refuse" href="">disable</button> memo-encryption now.</b></p>
     <p v-else><b>Currently, you have not enabled memo-encryption and all the memos to you must be clear text.
     You can <button @click="allow" href="">enable</button> memo-encryption now, if you are using MetaMask extension in a browser.</b></p>
     <p v-show="myAddress">Your current account is<br>${{myAddress}}.</p>
