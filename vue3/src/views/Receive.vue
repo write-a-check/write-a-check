@@ -49,10 +49,11 @@
     </p>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
-    Status:&nbsp;<b>{{cheque.status}}</b> 
+    Status: <b>{{cheque.status}}</b>&nbsp;
     Value: <b>{{cheque.amount}} <a :href="cheque.coinURL" target="_blank">{{cheque.coinSymbol}}</a></b>&nbsp;
     <button @click="addToWallet" :id="cheque.coinType" :name="cheque.coinSymbol" style="font-size: 14px">watch {{cheque.coinSymbol}}</button><br>
     <span v-show="cheque.hasTag">Tag: {{cheque.tag}}<br></span>
+    <span v-show="cheque.hasPassphrase && cheque.status=='active'"><b>You must enter correct secret tag to accept it</b><br></span>
     <span v-show="verboseMode">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
     Cheque ID: {{cheque.id}}<br/>
@@ -60,9 +61,10 @@
     </span>
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
     <span v-show="cheque.status=='active'">Remain: {{cheque.remainTime}}</span><br/>
-    <span v-show="cheque.withMemo">Memo:
+    <span v-show="cheque.encryptedMemo" style="white-space: pre-line">Memo:
     <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" v-bind:name="cheque.encryptedMemo" href="javascript:">
     Click here to decrypt the memo</a><br/></span>
+    <span v-show="cheque.clearTextMemo" style="white-space: pre-line">Memo: {{cheque.clearTextMemo}}</span>
     <p v-if="cheque.status=='active' && !use_otherAddr" style="text-align: right">
     <button @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
     <button @click="accept" v-bind:name="cheque.id">Accept</button>
@@ -316,16 +318,12 @@ export default {
       const encObj = hexToEncObj(encHex)
       const encObjHex = encodeObjAsHex(encObj)
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      cheque.decryptedMemo = await window.ethereum.request({
+      const decryptedMemo = await window.ethereum.request({
         method: 'eth_decrypt',
         params: [encObjHex, accounts[0]]
       })
       
-      var memo = cheque.decryptedMemo
-      if(!cheque.hasTag) {
-	memo = memo.substr(16) //skip the salt
-      }
-      event.target.parentNode.innerText = memo
+      event.target.parentNode.innerHTML = "Memo: "+decryptedMemo+"<br>"
     },
 
     async accept(event) {
@@ -348,11 +346,10 @@ export default {
 	  return
 	}
       } else {
-        const storedReferee = localStorage.getItem("referID")
-        if(storedReferee !== null) {
-          passphrase = "0x"+storedReferee
+        const referID = localStorage.getItem("referID")
+        if(referID !== null && referID.length <= 11) {
+          passphrase = "0x"+strToHex(referID)
         }
-	console.log("passphrase from referID", passphrase)
       }
       const gasPrice = ethers.BigNumber.from("0x3e63fa64")
       await chequeContract.acceptCheque(cheque.id, passphrase, {gasPrice: gasPrice})
@@ -425,7 +422,12 @@ export default {
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
       console.log("idList", idList)
-      await chequeContract.acceptCheques(idList, "0x")
+      var passphrase = "0x"
+      const referID = localStorage.getItem("referID")
+      if(referID !== null && referID.length <= 11) {
+        passphrase = "0x"+strToHex(referID)
+      }
+      await chequeContract.acceptCheques(idList, passphrase)
     },
     async checkAllow() {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -439,22 +441,12 @@ export default {
       if(!ok) {
         return
       }
-      var referee = "0x0000000000000000000000000000000000000000"
-      const storedReferee = localStorage.getItem("referee")
-      if(storedReferee !== null) {
-        referee = storedReferee
-      }
-      switchAllow(true, referee)
+      switchAllow(true, "0x0000000000000000000000000000000000000000")
     },
   },
   async mounted() {
-    if(this.$route.query.referee && localStorage.getItem("referee") === null) {
-      try {
-        const referee = ethers.utils.getAddress(this.$route.query.referee)
-	localStorage.setItem("referee", referee)
-      } catch(e) {
-        //do nothing
-      }
+    if(this.$route.query.r && localStorage.getItem("referID") === null) {
+      localStorage.setItem("referID", this.$route.query.r)
     }
     var cfg = localStorage.getItem("cfg-filter_acceptAddrList")
     if(cfg !== null) {

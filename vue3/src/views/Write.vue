@@ -21,7 +21,7 @@
    This is a secret tag
    </td></tr>
    <tr><td><b>Memo</b>
-   (It will be encrypted by the payee's public key and only the payee can decrypt)</td>
+   (It will be encrypted if the payee has enabled memo-encryption, or else sent as clear text)</td>
    <td><textarea v-model="memo" class="userinput" rows="10" cols="40"
    placeholder="Please enter some text to explain what is the purpose of this check. Leave here black if you have nothing to explain, or the receiver has not allowed encrypted memos."></textarea></td></tr>
    </table>
@@ -125,8 +125,8 @@ export default {
 	for(var i=start; i<end; i++) {
           const encPubkey = encPubkeys[i-start]
 	  console.log("encPubkey", encPubkey)
-          if(encPubkey.isZero() && (this.memo.length != 0 || hasPassphrase)) {
-            alert("The payee "+payeeList[i]+" is refusing memos, which means you cannot send secret tags either. Please do not send cheques with memos and/or secret tags.")
+          if(encPubkey.isZero()) {
+            encPubkeyList.push("")
 	  } else {
             encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
 	  }
@@ -216,14 +216,17 @@ export default {
         if(memo.length == 0) {
           memoEncList.push("0x")
         } else {
-	  const encHex = encryptMsgWithKey(memo, encPubkeyList[i])
-          memoEncList.push("0x"+encHex.substr(2))
+	  const encHex = encryptMsgWithKeyWrap(memo, encPubkeyList[i])
+	  console.log("encHex", encHex)
+          memoEncList.push(encHex)
         }
       }
       if(payeeList.length == 1) {
         await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
 	                passphraseHashList[0], memoEncList[0], {value: value})
       } else {
+        console.log(payeeList, coinType, sendAmt, deadlineTimestamp,
+			passphraseHashList, memoEncList)
         const gas = await chequeContract.estimateGas.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
 			passphraseHashList, memoEncList, {value: value})
 	if(gas>7000000) {

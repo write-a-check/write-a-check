@@ -122,9 +122,6 @@ abstract contract ChainChequeBase {
 			uint64 deadline,
 			uint passphraseOrHashtag,
 			bytes calldata memo) internal {
-		if(memo.length != 0) {
-		  require(encryptionPubkeys[payee] != 0, "no-enc-pubkey");
-		}
 		require(deadline < block.timestamp + 30 days, "deadline-must-in-one-month");
 		uint senderAsU256 = uint(uint160(bytes20(msg.sender)));
 		uint id = (uint(uint160(bytes20(payee)))<<96) | (block.number<<32) | (uint(uint24(senderAsU256))<<8);

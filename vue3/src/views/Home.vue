@@ -3,17 +3,22 @@
     <p style="text-align: center"><img width="360" src="/favicon.svg"></p>
     <p>You can learn more about blockchain cheques on <a href="https://www.checkbook.cash/">www.checkbook.cash</a>, especially the blogs on its <a href="https://www.checkbook.cash/posts/hello-world-from-blockchain-cheques">basic</a> and <a href="https://www.checkbook.cash/posts/other-usages-of-blockchain-cheques">extended</a> use cases.</p>
     <p>With this DApp, you can <a @click.stop.prevent="write" href="">write a check</a> to a payee, or <a @click.stop.prevent="revoke" href="">revoke expired checks</a> sent by you. You can also <a @click.stop.prevent="receive" href="">receive checks</a> sent to you.</p>
-    <p>This is a <a href="https://www.puredapp.org">Pure DApp</a>, which means its contract code and front-end code are both opensource and anyone can deploy them at anywhere.</p>
-    <p v-if="allowed"><b>Currently, you have allowed checks with memos sent to you.
-    You can <button @click="refuse" href="">refuse</button> further incoming checks to have memos. ${{myAddress}} is your current account.</b></p>
-    <p v-else><b>Currently, you have not allowed checks with memo sent to you.
-    You can <button @click="allow" href="">allow</button> checks to have memos now, if you are using MetaMask extension in a browser. ${{myAddress}} is your current account.</b></p>
+    <p v-if="allowed"><b>Currently, you have enabled memo-encryption.
+    You can <button @click="refuse" href="">disable</button> memo-encryption now. ${{myAddress}} is your current account.</b></p>
+    <p v-else><b>Currently, you have not enabled memo-encryption and all the memos to you must be clear text.
+    You can <button @click="allow" href="">enable</button> memo-encryption now, if you are using MetaMask extension in a browser.</b></p>
+    <p v-show="myAddress">Your current account is<br>${{myAddress}}.</p>
+    <p v-show="referLink">Your refer link is<br><a :href="referLink"><code style="color: blue;">{{referLink}}</code></a></p>
+    <p v-show="myAddress && !referLink">You do not have a refer link, because your account never sent any transactions.</p>
+    <hr>
     <p>Why do we design such a DApp? Because we believe some features of paper checks can be borrowed to enrich the methods for airdropping. First of all, here is a Notification Center of airdrops. There are so many SEP20 tokens, and when somebody send you an unknown token, you are not even aware of that! However, if all the airdropped tokens are sent through cheques, you can find them all here.</p>
     <p>Second, cheques have deadlines. The payees must accept the cheques before the deadline, or the cheques can be revoked by the payer. If the payees are not interested, the payer can take back the tokens in expired cheques. Thus, no tokens are wasted.</p>
-    <p>Last but not least, cheques enables more communications. A tag with clear text (non-encrypted) can be attached to a cheque, explaining the reason of airdrop. If the payee's wallet support encryption (currently only MetaMask browser extension supports it), you can also send memos to her, if she allows memos. Unlike tags, memos have no length limit,  and are always encrypted for privacy. Using memos, you can guide a payee to try some DApps for further airdrop.</p>
+    <p>Last but not least, cheques enables more communications. A tag with clear text (non-encrypted) can be attached to a cheque, explaining the reason of airdrop. If the payee's wallet support encryption (currently only MetaMask browser extension supports it), you can also send memos to her. Unlike tags, memos have no length limit, and can be encrypted for privacy. Using memos, you can guide a payee to try some DApps for further airdrop.</p>
     <p>You can also require the payee to enter a predefined secret tag when accepting a cheque. To figure out what the secret tag is, the payee must follow the memo's guide, reading some document, receiving some e-mail, or chatting with some telegram robot. Thus you can buy the payee's attention with some tokens.</p>
     <p>We believe all these features are useful, so implement them in this DApp. This DApp does not charge you anything. It is a free tool as part of smartBCH's infrastructure. Hope you like it!</p>
+    <p>This is a <a href="https://www.puredapp.org">Pure DApp</a>, which means its contract code and front-end code are both opensource and anyone can deploy them at anywhere.</p>
     <p><b>CAVEAT:</b> This is an opensource software. It is provided “as is”, without warranty of any kind. Please use it <b>AT YOUR OWN RISK</b>.</p>
+    <p><button @click="showReferID">Show Refer ID</button></p>
     <!--
     <p><button @click="deployLogic">deployLogic</button></p>
     <p><button @click="deploySimpleToken">deploySimpleToken</button></p>
@@ -61,11 +66,15 @@ export default {
   name: 'Home',
   data() {
     return {
-      myAddress: "",
+      myAddress: null,
+      referLink: null,
       allowed: false
     }
   },
   methods: {
+    showReferID() {
+      alert(localStorage.getItem("referID"))
+    },
     async deployLogic() {
       await deploy(window.chequeBytecode)
     },
@@ -73,16 +82,12 @@ export default {
       await deploySimpleToken()
     },
     async allow() {
-      var referee = "0x0000000000000000000000000000000000000000"
-      if(this.$route.query.refer && this.$route.params.refer.length != 0) {
-	try {
-	  referee = ethers.utils.getAddress(this.$route.params.refer)
-	} catch (e) {
-	  alert(this.$route.params.refer+" is not an valid address for referee.")
-	  return
-	}
+      var referID = "0x0000000000000000000000000000000000000000"
+      const storedReferee = localStorage.getItem("referID")
+      if(storedReferee !== null) {
+        referID = storedReferee
       }
-      switchAllow(true, referee)
+      switchAllow(true, referID)
     },
     async refuse() {
       switchAllow(false)
@@ -98,13 +103,19 @@ export default {
     } 
   },
   async mounted() {
-    if (typeof window.ethereum === 'undefined') {
-      alertNoWallet()
+    if(!connectWallet()) {
       return
+    }
+    if(this.$route.query.r && localStorage.getItem("referID") === null) {
+      localStorage.setItem("referID", this.$route.query.r)
     }
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     const signer = provider.getSigner()
     this.myAddress = await signer.getAddress()
+    const nonce = await provider.getTransactionCount(this.myAddress)
+    if(nonce != 0) {
+      this.referLink = "https://app.checkbook.cash/?r="+hexToReferID(this.myAddress.substr(2,22))
+    }
     const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
     try {
       const encPubkey = await chequeContract.encryptionPubkeys(this.myAddress)
