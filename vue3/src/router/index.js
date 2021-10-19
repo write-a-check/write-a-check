@@ -7,9 +7,9 @@ import Donate from '../views/Donate.vue'
 import Airdrop from '../views/Airdrop.vue'
 
 const routes = [
+  { path: "/", component: Receive },
   { path: "/about", component: Home },
   { path: "/write", component: Write },
-  { path: "/receive", component: Receive },
   { path: "/donate", component: Donate },
   { path: "/airdrop", component: Airdrop },
   { path: "/revoke", component: Revoke }]

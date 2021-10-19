@@ -13,7 +13,7 @@
   </p>
   </div>
   <div id="nav" style="font-size: 24px; width: 600px; margin: auto">
-    <router-link tag="li" to="/receive">receive</router-link><span style="color: #EEEEEE"> | </span>
+    <router-link tag="li" to="/">receive</router-link><span style="color: #EEEEEE"> | </span>
     <router-link tag="li" to="/write">write</router-link><span style="color: #EEEEEE"> | </span>
     <router-link tag="li" to="/revoke">revoke</router-link><span style="color: #EEEEEE"> | </span>
     <router-link tag="li" to="/donate">donate</router-link><span style="color: #EEEEEE"> | </span>
@@ -26,14 +26,12 @@
 </style>  
 
 <script>
-
 export default {
   data() {
     return {
     }
   },
   async mounted() {
-      this.$router.push('receive');
   }
 }
 </script>

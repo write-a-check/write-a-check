@@ -96,7 +96,7 @@ export default {
       this.$router.push('write');
     },
     receive() {
-      this.$router.push('receive');
+      this.$router.push('/');
     },
     revoke() {
       this.$router.push('revoke');
