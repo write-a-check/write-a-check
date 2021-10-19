@@ -1,5 +1,5 @@
 <template>
-  <h2 style="background: lightgrey; width: 360px; margin: auto; border-radius: 25px; text-align: center;">
+  <h2 style="background: #E8E8E8; width: 360px; margin: auto; border-radius: 25px; text-align: center; font-size: 24px;">
   <span style="color: red">B</span>
   <span style="color: orange">L</span>
   <span style="color: yellow">O</span>

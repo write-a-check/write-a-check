@@ -4,9 +4,9 @@
     <p>You can learn more about blockchain cheques on <a href="https://www.checkbook.cash/">www.checkbook.cash</a>, especially the blogs on its <a href="https://www.checkbook.cash/posts/hello-world-from-blockchain-cheques">basic</a> and <a href="https://www.checkbook.cash/posts/other-usages-of-blockchain-cheques">extended</a> use cases.</p>
     <p>With this DApp, you can <a @click.stop.prevent="write" href="">write a check</a> to a payee, or <a @click.stop.prevent="revoke" href="">revoke expired checks</a> sent by you. You can also <a @click.stop.prevent="receive" href="">receive checks</a> sent to you.</p>
     <p v-if="allowed"><b>Currently, you have enabled memo-encryption.
-    You can <button @click="refuse" href="">disable</button> memo-encryption now.</b></p>
+    You can <button class="button is-info is-light" @click="refuse" href="">disable</button> memo-encryption now.</b></p>
     <p v-else><b>Currently, you have not enabled memo-encryption and all the memos to you must be clear text.
-    You can <button @click="allow" href="">enable</button> memo-encryption now, if you are using MetaMask extension in a browser.</b></p>
+    You can <button class="button is-info is-light" @click="allow" href="">enable</button> memo-encryption now, if you are using MetaMask extension in a browser.</b></p>
     <p v-show="myAddress">Your current account is<br>${{myAddress}}.</p>
     <p v-show="referLink">Your refer link is<br><a :href="referLink"><code style="color: blue;">{{referLink}}</code></a></p>
     <p v-show="myAddress && !referLink">You do not have a refer link, because your account never sent any transactions.</p>
@@ -18,8 +18,8 @@
     <p>We believe all these features are useful, so implement them in this DApp. This DApp does not charge you anything. It is a free tool as part of smartBCH's infrastructure. Hope you like it!</p>
     <p>This is a <a href="https://www.puredapp.org">Pure DApp</a>, which means its contract code and front-end code are both opensource and anyone can deploy them at anywhere.</p>
     <p><b>CAVEAT:</b> This is an opensource software. It is provided “as is”, without warranty of any kind. Please use it <b>AT YOUR OWN RISK</b>.</p>
-    <p><button @click="showReferID">Show Refer ID</button></p>
     <!--
+    <p><button @click="showReferID">Show Refer ID</button></p>
     <p><button @click="deployLogic">deployLogic</button></p>
     <p><button @click="deploySimpleToken">deploySimpleToken</button></p>
     -->

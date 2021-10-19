@@ -2,13 +2,13 @@
   <div class="normal">
     <h5>Here you can list all the checks sent by you, and revoke the expired ones (which have passed the deadline)</h5>
     <p style="text-align: center">
-    <button @click="list" :disabled="isLoading" style="width: 280px">List checks sent by me</button>
+    <button  class="button is-primary" @click="list" :disabled="isLoading" style="width: 280px">List checks sent by me</button>
     </p>
     <hr/>
     <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
     <p v-show="chequeNotFound">No cheque found</p>
     <p v-show="canRevoke" style="text-align: center">
-    <button @click="revoke" style="width: 280px">Revoke all expired checks</button>
+    <button class="button is-info is-light" @click="revoke" style="width: 280px">Revoke all expired checks</button>
     </p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;Status:&nbsp;<b>{{cheque.status}}</b><br/>

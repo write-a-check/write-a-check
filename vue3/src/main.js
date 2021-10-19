@@ -278,9 +278,9 @@ function IsPC() {
        return flag;
 }
 
-if(IsPC()) {
-   document.getElementById("app").style.zoom = 1.2
-}
+//if(IsPC()) {
+//   document.getElementById("app").style.zoom = 1.2
+//}
 
 createApp(App).use(router).mount('#app')
 

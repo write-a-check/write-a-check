@@ -2,8 +2,8 @@
   <div class="normal">
     <br>
     <p style="text-align: center">
-    <button @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button @click="toggle" style="width: 180px">{{toggleBtnText}}</button>
+    <button class="button is-primary" @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button class="button" @click="toggle" style="width: 180px">{{toggleBtnText}}</button>
     </p>
 
     <div v-show="showOptions">
@@ -42,11 +42,14 @@
     <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
-    <p v-show="doAll && !use_otherAddr">
-    <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>
-    <br><br>
-    <button @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button>
-    </p>
+    <div v-show="doAll && !use_otherAddr">
+    <p style="text-align: center">
+    <button class="button is-info is-light" @click="refuseAll" style="width: 280px">Refuse all active checks</button></p>
+    <p style="font-size: 8px">&nbsp;</p>
+    <p style="text-align: center">
+    <button class="button is-info is-light" @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button></p>
+    <p style="font-size: 8px">&nbsp;</p>
+    </div>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
     Status: <b>{{cheque.status}}</b>&nbsp;
@@ -56,18 +59,18 @@
     <span v-show="cheque.hasPassphrase && cheque.status=='active'"><b>You must enter correct secret tag to accept it</b><br></span>
     <span v-show="verboseMode">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
-    Cheque ID: {{cheque.id}}<br/>
+    <span style="overflow-wrap: break-word;">Cheque ID: {{cheque.id}}</span><br/>
     Issue Time: {{cheque.startTimeStr}}<br/>
     </span>
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
-    <span v-show="cheque.status=='active'">Remain: {{cheque.remainTime}}</span><br/>
+    <span v-show="cheque.status=='active'">({{cheque.remainTime}} left)</span><br/>
     <span v-show="cheque.encryptedMemo" style="white-space: pre-line">Memo:
     <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" v-bind:name="cheque.encryptedMemo" href="javascript:">
     Click here to decrypt the memo</a><br/></span>
     <span v-show="cheque.clearTextMemo" style="white-space: pre-line">Memo: {{cheque.clearTextMemo}}</span>
     <p v-if="cheque.status=='active' && !use_otherAddr" style="text-align: right">
-    <button @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button @click="accept" v-bind:name="cheque.id">Accept</button>
+    <button class="button" @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button class="button is-primary" @click="accept" v-bind:name="cheque.id">Accept</button>
     </p>
     <br v-else>
     </template>
@@ -449,43 +452,43 @@ export default {
       localStorage.setItem("referID", this.$route.query.r)
     }
     var cfg = localStorage.getItem("cfg-filter_acceptAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_acceptAddrList = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-acceptAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.acceptAddrList = cfg
     }
     cfg = localStorage.getItem("cfg-filter_denyAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_denyAddrList = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-denyAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.denyAddrList = cfg
     }
     cfg = localStorage.getItem("cfg-filter_sep20Address")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_sep20Address = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-sep20Address")
-    if(cfg !== null) {
+    if(cfg) {
       this.sep20Address = cfg
     }
     cfg = localStorage.getItem("cfg-filter_minAmount")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_minAmount = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-minAmount")
-    if(cfg !== null) {
+    if(cfg) {
       this.minAmount = cfg
     }
     cfg = localStorage.getItem("cfg-filter_hashtag")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_hashtag = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-hashtag")
-    if(cfg !== null) {
+    if(cfg) {
       this.hashtag = cfg
     }
   }
