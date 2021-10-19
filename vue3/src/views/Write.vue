@@ -1,32 +1,32 @@
 <template>
   <div class="normal">
-   <table class="table" style="margin: 0 auto; border-spacing: 15px; width: 500px">
+   <table style="margin: 0 auto; border-spacing: 15px; width: 500px">
    <tr><td><b>Token's Address or Symbol</b><br/>
    (Click <a @click.prevent.stop="useBCH" href="javascript:"><b>here</b></a> if sending BCH)
    <input v-model="sep20Address" type="text" class="userinput"
    placeholder="Please enter an SEP20 token's address or symbol"></td></tr>
-   <tr><td><b>Payees' Addresses</b><br/>You can also paste any text in the text area below, and
+   <tr><td><br><b>Payees' Addresses</b><br/>You can also paste any text in the text area below, and
    <a @click.prevent.stop="extract" href="javascript:"><b>extract addresses from it</b></a>.
    <textarea v-model="addressList" placeholder="Please enter addresses in HEX format. One address in a line" 
-   class="userinput" rows="6" cols="40"></textarea></td></tr>
-   <tr><td><b>Amount Sent to Each Payee</b>
+   class="usertextarea" rows="6" cols="40"></textarea></td></tr>
+   <tr><td><br><b>Amount Sent to Each Payee</b>
    <input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
-   <tr><td><b>Deadline</b>
+   <tr><td><br><b>Deadline</b>
    <input v-model="deadline" class="userinput" type="datetime-local"></td></tr>
-   <tr><td><b>Tag</b>
+   <tr><td><br><b>Tag</b>
    (If you mark it as a secret tag, then the receiver must enter this tag to get the coins.)
    <input v-model="passphrase" class="userinput" type="text"
    placeholder="Leave here black if a tag isn't needed"><br/>
    <input v-model="isRealPassphrase" type="checkbox" class="userinput" style="width: 20px; height: 20px" >
    This is a secret tag
    </td></tr>
-   <tr><td><b>Memo</b>
+   <tr><td><br><b>Memo</b>
    (It will be encrypted if the payee has enabled memo-encryption, or else sent as clear text)
-   <textarea v-model="memo" class="userinput" rows="10" cols="40"
+   <textarea v-model="memo" class="usertextarea" rows="10" cols="40"
    placeholder="Please enter some text to explain what is the purpose of this check.&#10Leave here black if you have nothing to explain, or the receiver has not allowed encrypted memos."></textarea>
-   <p style="text-align: center"><button class="button is-primary" @click="submit" style="font-size: 24px; width: 200px" :disabled="isSubmitting">Submit</button></p>
    </td></tr>
    </table>
+   <p style="text-align: center"><button class="button is-primary" @click="submit" style="font-size: 24px; width: 200px" :disabled="isSubmitting">Submit</button></p>
   </div>
 </template>
 

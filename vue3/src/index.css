@@ -8,20 +8,26 @@
   zoom: 0.64;
 }
 
+
 .router-link-active,
 .router-link-exact-active {
   font-size: 30px;
   font-weight: bold;
   cursor: pointer;
-}
-
-li a {
-    text-decoration: none;
+  text-decoration: underline;
 }
 
 .userinput {
-    font-size:22px;
+    font-size:20px;
     width: 520px;
+    outline: 0;
+    border-width: 0 0 1px;
+    border-color: #2c3e50;
+}
+.usertextarea {
+    font-size:20px;
+    width: 520px;
+    border-radius: 5px;
 }
 .normal {
    width: 600px;

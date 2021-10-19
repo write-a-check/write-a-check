@@ -9,32 +9,32 @@
     <div v-show="showOptions">
     <input v-model="filter_acceptAddrList" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks which are sent from:<br/>
-    <textarea v-model="acceptAddrList" style="width: 500px; font-size: 16px" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
+    <textarea v-model="acceptAddrList" class="usertextarea" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
     <input v-model="filter_denyAddrList" type="checkbox" style="width: 20px; height: 20px" >
     Do NOT show checks which are sent from:<br/>
-    <textarea v-model="denyAddrList" style="width: 500px; font-size: 16px" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
+    <textarea v-model="denyAddrList" class="usertextarea" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
 
     <input v-model="filter_sep20Address" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks of this coin:
-    <input v-model="sep20Address" type="text" style="width: 500px" placeholder="Enter an SEP20 token's symbol or address"><br/>
+    <input v-model="sep20Address" type="text" class="userinput" placeholder="Enter an SEP20 token's symbol or address"><br/>
 
     <input v-model="filter_minAmount" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks whose amounts are no less than
-    <input v-model="minAmount" type="number" style="width: 330px" placeholder="0.0"><br/>
+    <input v-model="minAmount" type="number" class="userinput" placeholder="0.0"><br/>
 
     <input v-model="filter_hashtag" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks whose hashtag is
-    <input v-model="hashtag" type="text" style="width: 435px" placeholder="Leave here black for checks without any hashtag"><br/>
+    <input v-model="hashtag" type="text" class="userinput" placeholder="Leave here black for checks without any hashtag"><br/>
 
     <input v-model="onlyActive" type="checkbox" style="width: 20px; height: 20px" checked>
     Only show active checks (not been accepted, refused, nor expired, i.e. passed deadline).<br/>
 
-    <input v-model="verboseMode" type="checkbox" style="width: 20px; height: 20px" checked>
-    Verbose Mode (show the cheque's sender, issue time and id).<br/>
-
     <input v-model="use_otherAddr" type="checkbox" style="width: 20px; height: 20px" >
     List the cheques to following address instead of my own address:
-    <input v-model="otherAddr" type="text" style="width: 435px"><br/>
+    <input v-model="otherAddr" type="text" class="userinput"><br/>
+
+    <input v-model="verboseMode" type="checkbox" style="width: 20px; height: 20px" checked>
+    Verbose Mode (show the cheque's sender, issue time and id).<br/>
     </div>
 
     <hr/>
