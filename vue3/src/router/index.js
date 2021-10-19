@@ -7,9 +7,7 @@ import Donate from '../views/Donate.vue'
 import Airdrop from '../views/Airdrop.vue'
 
 const routes = [
-  { path: "/", component: Receive },
   { path: "/about", component: Home },
-  { path: "/refer/:refereeAddr", component: Receive },
   { path: "/write", component: Write },
   { path: "/receive", component: Receive },
   { path: "/donate", component: Donate },
@@ -17,8 +15,6 @@ const routes = [
   { path: "/revoke", component: Revoke }]
 
 const router = createRouter({
-  linkActiveClass: "active",
-  linkExactActiveClass: "exact-active",
   history: createWebHistory(process.env.BASE_URL),
   routes
 })

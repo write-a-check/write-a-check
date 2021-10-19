@@ -2,8 +2,8 @@
   <div class="normal">
     <br>
     <p style="text-align: center">
-    <button class="button is-primary" @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button class="button" @click="toggle" style="width: 180px">{{toggleBtnText}}</button>
+    <button class="button" @click="toggle" style="width: 180px">{{toggleBtnText}}</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button class="button is-primary" @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>
     </p>
 
     <div v-show="showOptions">
@@ -210,7 +210,7 @@ export default {
       hashtag: "",
       onlyActive: true,
       showOptions: false,
-      toggleBtnText: "Show Options",
+      toggleBtnText: "➕ Show Options",
       chequeNotFound: false,
       doAll: false,
       showTotalCoins: false,
@@ -227,7 +227,7 @@ export default {
   methods: {
     toggle() {
       this.showOptions = !this.showOptions
-      this.toggleBtnText = this.showOptions? "Hide Options" : "Show Options"
+      this.toggleBtnText = this.showOptions? "➖ Hide Options" : "➕ Show Options"
     },
     async list() {
       if(!connectWallet()) {

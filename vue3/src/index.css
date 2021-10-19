@@ -7,10 +7,10 @@
   margin-top: 20px;
 }
 
-nav li:hover,
-nav li.router-link-active,
-nav li.router-link-exact-active {
-  background-color: indianred;
+.router-link-active,
+.router-link-exact-active {
+  font-size: 30px;
+  font-weight: bold;
   cursor: pointer;
 }
 

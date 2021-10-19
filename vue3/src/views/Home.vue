@@ -8,7 +8,7 @@
     <p v-else><b>Currently, you have not enabled memo-encryption and all the memos to you must be clear text.
     You can <button class="button is-info is-light" @click="allow" href="">enable</button> memo-encryption now, if you are using MetaMask extension in a browser.</b></p>
     <p v-show="myAddress">Your current account is<br>${{myAddress}}.</p>
-    <p v-show="referLink">Your refer link is<br><a :href="referLink"><code style="color: blue;">{{referLink}}</code></a></p>
+    <p v-show="referLink">This account has a bonded refer link, which is<br><a :href="referLink"><code style="color: blue;">{{referLink}}</code></a></p>
     <p v-show="myAddress && !referLink">You do not have a refer link, because your account never sent any transactions.</p>
     <hr>
     <p>Why do we design such a DApp? Because we believe some features of paper checks can be borrowed to enrich the methods for airdropping. First of all, here is a Notification Center of airdrops. There are so many SEP20 tokens, and when somebody send you an unknown token, you are not even aware of that! However, if all the airdropped tokens are sent through cheques, you can find them all here.</p>

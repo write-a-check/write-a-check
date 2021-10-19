@@ -1,6 +1,6 @@
 <template>
   <div class="normal">
-   <br>
+   <p style="font-size: 16px"></p>
    <p>Blockchain cheque is a new idea. We want to promote it through airdrops. At the beginning, we would like to start with $CATS (address: <span style="user-select: none;">0x265bD28d79400D55a1665707Fa14A72978FA6043</span>). So if you have some $CATS token, please donate some to these airdrop events. Thank you very much!</p>
    <p>The community has donated a large amount of $CATS to this airdrop project, and after some airdrop events, now we still have {{totalDonation}} $CATS remained. <a href="https://www.checkbook.cash/donations.html">Here</a> is a full list of donations, which is periodically updated.</p>
    <table class="table" style="margin: auto; border-spacing: 15px;">
