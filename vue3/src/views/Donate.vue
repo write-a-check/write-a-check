@@ -14,7 +14,7 @@
    <tr><td><b>Your comment (optional):</b>
    <textarea v-model="comment" class="usertextarea" rows="10" cols="40"></textarea>
    <p style="text-align: center">
-   <button class="button is-primary" @click="donate" style="font-size: 24px; width: 200px">Donate</button>
+   <button class="button is-info" @click="donate" style="font-size: 24px; width: 200px">Donate</button>
    <br></p>
    </td></tr>
    </table>

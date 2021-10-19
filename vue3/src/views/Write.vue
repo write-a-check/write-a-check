@@ -26,7 +26,7 @@
    placeholder="Please enter some text to explain what is the purpose of this check.&#10Leave here black if you have nothing to explain, or the receiver has not allowed encrypted memos."></textarea>
    </td></tr>
    </table>
-   <p style="text-align: center"><button class="button is-primary" @click="submit" style="font-size: 24px; width: 200px" :disabled="isSubmitting">Submit</button></p>
+   <p style="text-align: center"><button class="button is-info" @click="submit" style="font-size: 24px; width: 200px" :disabled="isSubmitting">Submit</button></p>
   </div>
 </template>
 

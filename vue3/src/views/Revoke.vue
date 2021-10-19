@@ -3,7 +3,7 @@
     <p style="font-size: 16px"></p>
     <h5>Here you can list all the checks sent by you, and revoke the expired ones (which have passed the deadline)</h5>
     <p style="text-align: center">
-    <button  class="button is-primary" @click="list" :disabled="isLoading" style="width: 280px">List checks sent by me</button>
+    <button  class="button is-info" @click="list" :disabled="isLoading" style="width: 280px">List checks sent by me</button>
     </p>
     <hr/>
     <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>

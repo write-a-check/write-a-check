@@ -3,7 +3,7 @@
     <br>
     <p style="text-align: center">
     <button class="button" @click="toggle" style="width: 180px">{{toggleBtnText}}</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button class="button is-primary" @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>
+    <button class="button is-info" @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>
     </p>
 
     <div v-show="showOptions">
@@ -70,7 +70,7 @@
     <span v-show="cheque.clearTextMemo" style="white-space: pre-line">Memo: {{cheque.clearTextMemo}}</span>
     <p v-if="cheque.status=='active' && !use_otherAddr" style="text-align: right">
     <button class="button" @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button class="button is-primary" @click="accept" v-bind:name="cheque.id">Accept</button>
+    <button class="button is-info" @click="accept" v-bind:name="cheque.id">Accept</button>
     </p>
     <br v-else>
     </template>
