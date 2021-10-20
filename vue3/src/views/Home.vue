@@ -114,7 +114,7 @@ export default {
     this.myAddress = await signer.getAddress()
     const nonce = await provider.getTransactionCount(this.myAddress)
     if(nonce != 0) {
-      this.referLink = "https://app.checkbook.cash/?r="+hexToReferID(this.myAddress.substr(2,22))
+      this.referLink = "https://www.checkbook.cash/app/?r="+hexToReferID(this.myAddress.substr(2,22))
     }
     const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
     try {
