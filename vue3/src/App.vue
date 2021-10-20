@@ -18,6 +18,7 @@
   <span style="color: orange">E</span>
   <span style="color: yellow">S</span>
   </h2>
+  <p style="color: red; text-align: center">Here's checkbook's legacy version, for receiving old checks.<br>Please write and receive new checks with <a href="https://www.checkbook.cash/app">www.checkbook.cash/app</a></p>
   <div id="nav" style="font-size: 24px; width: 600px; margin: auto">
     <router-link style="text-decoration: none;" tag="li" active-class="active" to="/receive">receive</router-link><span style="color: #EEEEEE"> | </span>
     <router-link style="text-decoration: none;" tag="li" active-class="active" to="/write">write</router-link><span style="color: #EEEEEE"> | </span>
