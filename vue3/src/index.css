@@ -4,30 +4,39 @@
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
-  zoom: 0.55; 
+  margin-top: 20px;
+  zoom: 0.64;
 }
 
-nav li:hover,
-nav li.router-link-active,
-nav li.router-link-exact-active {
-  background-color: indianred;
+
+.router-link-active,
+.router-link-exact-active {
+  font-size: 30px;
+  font-weight: bold;
   cursor: pointer;
-}
-
-li a {
-    text-decoration: none;
+  text-decoration: underline;
 }
 
 .userinput {
-    font-size:16px;
-    width: 360px;
+    font-size:20px;
+    width: 520px;
+    outline: 0;
+    border-width: 0 0 1px;
+    border-color: #3f8ed1;
 }
+
+.usertextarea {
+    font-size:20px;
+    width: 520px;
+    border-radius: 5px;
+    border-color: #3f8ed1;
+}
+
 .normal {
    width: 600px;
    margin: auto;
    text-align: left;
-   font-size: 18px;
+   font-size: 22px;
 }
 
 p {

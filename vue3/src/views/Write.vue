@@ -1,32 +1,32 @@
 <template>
   <div class="normal">
-   <table style="margin: 0 auto; border-spacing: 15px;">
+   <table style="margin: 0 auto; border-spacing: 15px; width: 500px">
    <tr><td><b>Token's Address or Symbol</b><br/>
-   (Click <button @click="useBCH">here</button> if sending BCH)</td>
-   <td><input v-model="sep20Address" type="text" class="userinput"
+   (Click <a @click.prevent.stop="useBCH" href="javascript:"><b>here</b></a> if sending BCH)
+   <input v-model="sep20Address" type="text" class="userinput"
    placeholder="Please enter an SEP20 token's address or symbol"></td></tr>
-   <tr><td><b>Payees' Addresses</b><br/>You can also paste any text in the right text area, and
-   click <button @click="extract">extract</button> to extract addresses from it.</td>
-   <td><textarea v-model="addressList" placeholder="Please enter addresses in HEX format. One address in a line" 
-   class="userinput" rows="6" cols="40"></textarea></td></tr>
-   <tr><td><b>Amount Sent to Each Payee</b></td>
-   <td><input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
-   <tr><td><b>Deadline</b></td>
-   <td><input v-model="deadline" class="userinput" type="datetime-local"></td></tr>
-   <tr><td><b>Tag</b>
-   (If you mark it as a secret tag, then the receiver must enter this tag to get the coins.)</td>
-   <td><input v-model="passphrase" class="userinput" type="text"
-   placeholder="Leave here black if tag isn't needed"><br/>
+   <tr><td><br><b>Payees' Addresses</b><br/>You can also paste any text in the text area below, and
+   <a @click.prevent.stop="extract" href="javascript:"><b>extract addresses from it</b></a>.
+   <textarea v-model="addressList" placeholder="Please enter addresses in HEX format. One address in a line" 
+   class="usertextarea" rows="6" cols="40"></textarea></td></tr>
+   <tr><td><br><b>Amount Sent to Each Payee</b>
+   <input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
+   <tr><td><br><b>Deadline</b>
+   <input v-model="deadline" class="userinput" type="datetime-local"></td></tr>
+   <tr><td><br><b>Tag</b>
+   (If you mark it as a secret tag, then the receiver must enter this tag to get the coins.)
+   <input v-model="passphrase" class="userinput" type="text"
+   placeholder="Leave here black if a tag isn't needed"><br/>
    <input v-model="isRealPassphrase" type="checkbox" class="userinput" style="width: 20px; height: 20px" >
    This is a secret tag
    </td></tr>
-   <tr><td><b>Memo</b>
-   (It will be encrypted by the payee's public key and only the payee can decrypt)</td>
-   <td><textarea v-model="memo" class="userinput" rows="10" cols="40"
-   placeholder="Please enter some text to explain what is the purpose of this check. Leave here black if you have nothing to explain, or the receiver has not allowed encrypted memos."></textarea></td></tr>
+   <tr><td><br><b>Memo</b>
+   (It will be encrypted if the payee has enabled memo-encryption, or else sent as clear text)
+   <textarea v-model="memo" class="usertextarea" rows="10" cols="40"
+   placeholder="Please enter some text to explain what is the purpose of this check.&#10Leave here black if you have nothing to explain, or the receiver has not allowed encrypted memos."></textarea>
+   </td></tr>
    </table>
-   <div style="margin: auto; width: 40%"><br/>
-   <button @click="submit" style="font-size: 24px; width: 300px" :disabled="isSubmitting">Submit</button></div>
+   <p style="text-align: center"><button class="button is-info" @click="submit" style="font-size: 24px; width: 200px" :disabled="isSubmitting">Submit</button></p>
   </div>
 </template>
 
@@ -125,8 +125,8 @@ export default {
 	for(var i=start; i<end; i++) {
           const encPubkey = encPubkeys[i-start]
 	  console.log("encPubkey", encPubkey)
-          if(encPubkey.isZero() && (this.memo.length != 0 || hasPassphrase)) {
-            alert("The payee "+payeeList[i]+" is refusing memos, which means you cannot send secret tags either. Please do not send cheques with memos and/or secret tags.")
+          if(encPubkey.isZero()) {
+            encPubkeyList.push("")
 	  } else {
             encPubkeyList.push(ethers.utils.base64.encode(encPubkey))
 	  }
@@ -216,14 +216,17 @@ export default {
         if(memo.length == 0) {
           memoEncList.push("0x")
         } else {
-	  const encHex = encryptMsgWithKey(memo, encPubkeyList[i])
-          memoEncList.push("0x"+encHex.substr(2))
+	  const encHex = encryptMsgWithKeyWrap(memo, encPubkeyList[i])
+	  console.log("encHex", encHex)
+          memoEncList.push(encHex)
         }
       }
       if(payeeList.length == 1) {
         await chequeContract.writeCheque(payeeList[0], coinType, sendAmt, deadlineTimestamp,
 	                passphraseHashList[0], memoEncList[0], {value: value})
       } else {
+        console.log(payeeList, coinType, sendAmt, deadlineTimestamp,
+			passphraseHashList, memoEncList)
         const gas = await chequeContract.estimateGas.writeCheques(payeeList, coinType, sendAmt, deadlineTimestamp,
 			passphraseHashList, memoEncList, {value: value})
 	if(gas>7000000) {

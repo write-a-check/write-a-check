@@ -1,26 +1,25 @@
 <template>
   <div class="normal">
+   <p style="font-size: 16px"></p>
    <p>Blockchain cheque is a new idea. We want to promote it through airdrops. At the beginning, we would like to start with $CATS (address: <span style="user-select: none;">0x265bD28d79400D55a1665707Fa14A72978FA6043</span>). So if you have some $CATS token, please donate some to these airdrop events. Thank you very much!</p>
    <p>The community has donated a large amount of $CATS to this airdrop project, and after some airdrop events, now we still have {{totalDonation}} $CATS remained. <a href="https://www.checkbook.cash/donations.html">Here</a> is a full list of donations, which is periodically updated.</p>
    <table style="margin: auto; border-spacing: 15px;">
-   <tr><td><b>Receiver of Donation</b><br/>
-   </td>
-   <td>0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41</td></tr>
-   <tr><td><b>Amount to Donate</b></td>
-   <td><input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
-   <tr><td><b>Your name (optional)</b>
-   </td>
-   <td><input v-model="donator" class="userinput" type="text">
+   <tr><td><b>Receiver of Donation:</b><br/>
+   0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41</td></tr>
+   <tr><td><b>Amount to Donate:</b>
+   <input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
+   <tr><td><b>Your name (optional):</b>
+   <input v-model="donator" class="userinput" type="text">
    </td></tr>
-   <tr><td><b>Your comment (optional)</b>
-   </td>
-   <td><textarea v-model="comment" class="userinput" rows="10" cols="40"></textarea></td></tr>
-   </table>
-   <div style="margin: auto; width: 40%"><br/>
-   <button @click="donate" style="font-size: 24px; width: 300px">Donate</button></div>
-   <hr>
+   <tr><td><b>Your comment (optional):</b>
+   <textarea v-model="comment" class="usertextarea" rows="10" cols="40"></textarea>
    <p style="text-align: center">
-   <button @click="showLatest" :disabled="isLoading" style="font-size: 24px; width: 300px">Show Latest Donations</button>&nbsp;
+   <button class="button is-info" @click="donate" style="font-size: 24px; width: 200px">Donate</button>
+   <br></p>
+   </td></tr>
+   </table>
+   <p style="text-align: center"><br>
+   <button class="button is-info is-light is-small" @click="showLatest" :disabled="isLoading" style="font-size: 24px; width: 300px">Show Latest Donations</button><br>
    <a href="https://www.checkbook.cash/donations.html">Full List (periodically updated)</a></p>
    <table border=1>
    <tr><th>Height</th><th>Donator's name</th><th>Amount</th><th>Comment</th></tr>

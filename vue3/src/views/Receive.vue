@@ -2,39 +2,39 @@
   <div class="normal">
     <br>
     <p style="text-align: center">
-    <button @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button @click="toggle" style="width: 180px">{{toggleBtnText}}</button>
+    <button class="button" @click="toggle" style="width: 180px">{{toggleBtnText}}</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button class="button is-info" @click="list" :disabled="isLoading" style="width: 280px">List checks sent to me</button>
     </p>
 
     <div v-show="showOptions">
     <input v-model="filter_acceptAddrList" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks which are sent from:<br/>
-    <textarea v-model="acceptAddrList" style="width: 500px; font-size: 16px" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
+    <textarea v-model="acceptAddrList" class="usertextarea" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
     <input v-model="filter_denyAddrList" type="checkbox" style="width: 20px; height: 20px" >
     Do NOT show checks which are sent from:<br/>
-    <textarea v-model="denyAddrList" style="width: 500px; font-size: 16px" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
+    <textarea v-model="denyAddrList" class="usertextarea" placeholder="Each line contains an address and (optionally) some comments of this address" rows="10" cols="40"></textarea><br/>
 
     <input v-model="filter_sep20Address" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks of this coin:
-    <input v-model="sep20Address" type="text" style="width: 500px" placeholder="Enter an SEP20 token's symbol or address"><br/>
+    <input v-model="sep20Address" type="text" class="userinput" placeholder="Enter an SEP20 token's symbol or address"><br/>
 
     <input v-model="filter_minAmount" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks whose amounts are no less than
-    <input v-model="minAmount" type="number" style="width: 330px" placeholder="0.0"><br/>
+    <input v-model="minAmount" type="number" class="userinput" placeholder="0.0"><br/>
 
     <input v-model="filter_hashtag" type="checkbox" style="width: 20px; height: 20px" >
     Only show checks whose hashtag is
-    <input v-model="hashtag" type="text" style="width: 435px" placeholder="Leave here black for checks without any hashtag"><br/>
+    <input v-model="hashtag" type="text" class="userinput" placeholder="Leave here black for checks without any hashtag"><br/>
 
     <input v-model="onlyActive" type="checkbox" style="width: 20px; height: 20px" checked>
     Only show active checks (not been accepted, refused, nor expired, i.e. passed deadline).<br/>
 
-    <input v-model="verboseMode" type="checkbox" style="width: 20px; height: 20px" checked>
-    Verbose Mode (show the cheque's sender, issue time and id).<br/>
-
     <input v-model="use_otherAddr" type="checkbox" style="width: 20px; height: 20px" >
     List the cheques to following address instead of my own address:
-    <input v-model="otherAddr" type="text" style="width: 435px"><br/>
+    <input v-model="otherAddr" type="text" class="userinput"><br/>
+
+    <input v-model="verboseMode" type="checkbox" style="width: 20px; height: 20px" checked>
+    Verbose Mode (show the cheque's sender, issue time and id).<br/>
     </div>
 
     <hr/>
@@ -42,30 +42,35 @@
     <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
-    <p v-show="doAll && !use_otherAddr">
-    <button @click="refuseAll" style="width: 280px">Refuse all active checks</button>
-    <br><br>
-    <button @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button>
-    </p>
+    <div v-show="doAll && !use_otherAddr">
+    <p style="text-align: center">
+    <button class="button is-info is-light" @click="refuseAll" style="width: 280px">Refuse all active checks</button></p>
+    <p style="font-size: 8px">&nbsp;</p>
+    <p style="text-align: center">
+    <button class="button is-info is-light" @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button></p>
+    <p style="font-size: 8px">&nbsp;</p>
+    </div>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
-    Status:&nbsp;<b>{{cheque.status}}</b> 
+    Status: <b>{{cheque.status}}</b>&nbsp;
     Value: <b>{{cheque.amount}} <a :href="cheque.coinURL" target="_blank">{{cheque.coinSymbol}}</a></b>&nbsp;
     <button @click="addToWallet" :id="cheque.coinType" :name="cheque.coinSymbol" style="font-size: 14px">watch {{cheque.coinSymbol}}</button><br>
     <span v-show="cheque.hasTag">Tag: {{cheque.tag}}<br></span>
+    <span v-show="cheque.hasPassphrase && cheque.status=='active'"><b>You must enter correct secret tag to accept it</b><br></span>
     <span v-show="verboseMode">
     From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;<br/>
-    Cheque ID: {{cheque.id}}<br/>
+    <span style="overflow-wrap: break-word;">Cheque ID: {{cheque.id}}</span><br/>
     Issue Time: {{cheque.startTimeStr}}<br/>
     </span>
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
-    <span v-show="cheque.status=='active'">Remain: {{cheque.remainTime}}</span><br/>
-    <span v-show="cheque.withMemo">Memo:
+    <span v-show="cheque.status=='active'">({{cheque.remainTime}} left)</span><br/>
+    <span v-show="cheque.encryptedMemo" style="white-space: pre-line">Memo:
     <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" v-bind:name="cheque.encryptedMemo" href="javascript:">
     Click here to decrypt the memo</a><br/></span>
+    <span v-show="cheque.clearTextMemo" style="white-space: pre-line">Memo: {{cheque.clearTextMemo}}</span>
     <p v-if="cheque.status=='active' && !use_otherAddr" style="text-align: right">
-    <button @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button @click="accept" v-bind:name="cheque.id">Accept</button>
+    <button class="button" @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button class="button is-info" @click="accept" v-bind:name="cheque.id">Accept</button>
     </p>
     <br v-else>
     </template>
@@ -205,7 +210,7 @@ export default {
       hashtag: "",
       onlyActive: true,
       showOptions: false,
-      toggleBtnText: "Show Options",
+      toggleBtnText: "➕ Show Options",
       chequeNotFound: false,
       doAll: false,
       showTotalCoins: false,
@@ -222,7 +227,7 @@ export default {
   methods: {
     toggle() {
       this.showOptions = !this.showOptions
-      this.toggleBtnText = this.showOptions? "Hide Options" : "Show Options"
+      this.toggleBtnText = this.showOptions? "➖ Hide Options" : "➕ Show Options"
     },
     async list() {
       if(!connectWallet()) {
@@ -316,16 +321,12 @@ export default {
       const encObj = hexToEncObj(encHex)
       const encObjHex = encodeObjAsHex(encObj)
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      cheque.decryptedMemo = await window.ethereum.request({
+      const decryptedMemo = await window.ethereum.request({
         method: 'eth_decrypt',
         params: [encObjHex, accounts[0]]
       })
       
-      var memo = cheque.decryptedMemo
-      if(!cheque.hasTag) {
-	memo = memo.substr(16) //skip the salt
-      }
-      event.target.parentNode.innerText = memo
+      event.target.parentNode.innerHTML = "Memo: "+decryptedMemo+"<br>"
     },
 
     async accept(event) {
@@ -348,11 +349,10 @@ export default {
 	  return
 	}
       } else {
-        const storedReferee = localStorage.getItem("referID")
-        if(storedReferee !== null) {
-          passphrase = "0x"+storedReferee
+        const referID = localStorage.getItem("referID")
+        if(referID !== null && referID.length <= 11) {
+          passphrase = "0x"+strToHex(referID)
         }
-	console.log("passphrase from referID", passphrase)
       }
       const gasPrice = ethers.BigNumber.from("0x3e63fa64")
       await chequeContract.acceptCheque(cheque.id, passphrase, {gasPrice: gasPrice})
@@ -425,7 +425,12 @@ export default {
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
       console.log("idList", idList)
-      await chequeContract.acceptCheques(idList, "0x")
+      var passphrase = "0x"
+      const referID = localStorage.getItem("referID")
+      if(referID !== null && referID.length <= 11) {
+        passphrase = "0x"+strToHex(referID)
+      }
+      await chequeContract.acceptCheques(idList, passphrase)
     },
     async checkAllow() {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -439,61 +444,51 @@ export default {
       if(!ok) {
         return
       }
-      var referee = "0x0000000000000000000000000000000000000000"
-      const storedReferee = localStorage.getItem("referee")
-      if(storedReferee !== null) {
-        referee = storedReferee
-      }
-      switchAllow(true, referee)
+      switchAllow(true, "0x0000000000000000000000000000000000000000")
     },
   },
   async mounted() {
-    if(this.$route.query.referee && localStorage.getItem("referee") === null) {
-      try {
-        const referee = ethers.utils.getAddress(this.$route.query.referee)
-	localStorage.setItem("referee", referee)
-      } catch(e) {
-        //do nothing
-      }
+    if(this.$route.query.r && localStorage.getItem("referID") === null) {
+      localStorage.setItem("referID", this.$route.query.r)
     }
     var cfg = localStorage.getItem("cfg-filter_acceptAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_acceptAddrList = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-acceptAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.acceptAddrList = cfg
     }
     cfg = localStorage.getItem("cfg-filter_denyAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_denyAddrList = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-denyAddrList")
-    if(cfg !== null) {
+    if(cfg) {
       this.denyAddrList = cfg
     }
     cfg = localStorage.getItem("cfg-filter_sep20Address")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_sep20Address = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-sep20Address")
-    if(cfg !== null) {
+    if(cfg) {
       this.sep20Address = cfg
     }
     cfg = localStorage.getItem("cfg-filter_minAmount")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_minAmount = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-minAmount")
-    if(cfg !== null) {
+    if(cfg) {
       this.minAmount = cfg
     }
     cfg = localStorage.getItem("cfg-filter_hashtag")
-    if(cfg !== null) {
+    if(cfg) {
       this.filter_hashtag = (cfg == "yes")
     }
     cfg = localStorage.getItem("cfg-hashtag")
-    if(cfg !== null) {
+    if(cfg) {
       this.hashtag = cfg
     }
   }
