@@ -1,6 +1,8 @@
 const { ethers } = require("ethers");
 const fs = require("fs");
 
+const ChequeContractAddress = "0xa36C479eEAa25C0CFC7e099D3bEbF7A7F1303F40"
+
 function uint8ArrayToHex(buffer) {
   return Array.prototype.map.call(buffer, x => x.toString(16).padStart(2, '0')).join('');
 }
@@ -45,8 +47,6 @@ async function run(payeeList) {
 	const ChequeABI = [
 	  "function writeCheques(address[] calldata payeeList, address coinType, uint96 amount, uint64 deadline, uint[] calldata passphraseHashList, bytes[] calldata memoList) external payable",
 	]
-
-	const ChequeContractAddress = "0xfC4956e6e9EBA4F22b42Ef67C9aEA5f43e58f700"
 
 	const provider = new ethers.providers.JsonRpcProvider("https://smartbch.fountainhead.cash/mainnet")
 	//const provider = new ethers.providers.JsonRpcProvider("https://global.uat.cash")
