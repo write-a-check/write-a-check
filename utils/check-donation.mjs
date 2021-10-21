@@ -67,7 +67,7 @@ const receipt = "0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41"
 const [donations, total] = await getDonations(coinType, receipt, provider, 500000)
 donations.sort(function(a,b) {return b.amount - a.amount})
 var content = ["<html><body>"]
-content.push('<p>Please donate on <a href="https://app.checkbook.cash/donate">https://app.checkbook.cash/donate</a>')
+content.push('<p>Please donate on <a href="https://www.checkbook.cash/app/donate">https://www.checkbook.cash/app/donate</a>')
 content.push("<p>Here is a list of all the donations to support the airdrop from checkbook.cash.</p>")
 content.push("<p>This list is periodically updated. Last Update Time:&nbsp;"+(new Date).toISOString()+"</p>")
 content.push("<p>Total donated coins: "+total+"</p>")
