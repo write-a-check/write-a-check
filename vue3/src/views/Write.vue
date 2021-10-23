@@ -1,29 +1,34 @@
 <template>
   <div class="normal">
    <table style="margin: 0 auto; border-spacing: 15px; width: 500px">
+   <tr><td><b>Sender</b>(your wallet's current account):<br/>{{myAddress}}</td></tr>
+
    <tr><td><b>Token's Address or Symbol</b><br/>
    (Click <a @click.prevent.stop="useBCH" href="javascript:"><b>here</b></a> if sending BCH)
    <input v-model="sep20Address" type="text" class="userinput"
    placeholder="Please enter an SEP20 token's address or symbol"></td></tr>
-   <tr><td><br><b>Payees' Addresses</b><br/>You can also paste any text in the text area below, and
+
+   <tr><td><br><b>Payees' Addresses</b>(send checks to them)<br/>
+   You can also paste any text in the text area below, and
    <a @click.prevent.stop="extract" href="javascript:"><b>extract addresses from it</b></a>.
    <textarea v-model="addressList" placeholder="Please enter addresses in HEX format. One address in a line" 
    class="usertextarea" rows="6" cols="40"></textarea></td></tr>
-   <tr><td><br><b>Amount Sent to Each Payee</b>
+
+   <tr><td><br><b>Amount to Send to Each Payee</b>
    <input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
-   <tr><td><br><b>Deadline</b>
+   <tr><td><br><b>Deadline/Expiry Date</b><br>If a check is not accepted by this date, it will be cancelled and funds can be returned to sender.
    <input v-model="deadline" class="userinput" type="datetime-local"></td></tr>
    <tr><td><br><b>Tag</b>
-   (If you mark it as a secret tag, then the receiver must enter this tag to get the coins.)
+   (If you mark it as a secret tag, then the receiver must enter this tag to accept the check.)
    <input v-model="passphrase" class="userinput" type="text"
-   placeholder="Leave here black if a tag isn't needed"><br/>
+   placeholder="Leave here blank if a tag isn't needed"><br/>
    <input v-model="isRealPassphrase" type="checkbox" class="userinput" style="width: 20px; height: 20px" >
    This is a secret tag
    </td></tr>
    <tr><td><br><b>Memo</b>
    (It will be encrypted if the payee has enabled memo-encryption, or else sent as clear text)
    <textarea v-model="memo" class="usertextarea" rows="10" cols="40"
-   placeholder="Please enter some text to explain what is the purpose of this check.&#10Leave here black if you have nothing to explain, or the receiver has not allowed encrypted memos."></textarea>
+   placeholder="Please enter some text to explain what is the purpose of this check.&#10Leave here blank if you have nothing to explain."></textarea>
    </td></tr>
    </table>
    <p style="text-align: center"><button class="button is-info" @click="submit" style="font-size: 24px; width: 200px" :disabled="isSubmitting">Submit</button></p>
@@ -75,6 +80,7 @@ export default {
       deadline: "",
       addressList: [],
       isSubmitting: false,
+      myAddress: "[unknown]",
       memo: ""
     }
   },
@@ -241,6 +247,12 @@ export default {
     },
   },
   async mounted() {
+    if(!connectWallet()) {
+      return
+    }
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
+    const signer = provider.getSigner()
+    this.myAddress = await signer.getAddress()
     var deadline = new Date()
     var t = deadline.getTime() + 7 * 24 * 3600 * 1000
     deadline.setTime(t)
