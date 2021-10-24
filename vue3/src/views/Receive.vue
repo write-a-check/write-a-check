@@ -42,6 +42,7 @@
     <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
+    <p v-show="queryTime.length!=0">(The following list was updated on {{queryTime}})</p>
     <div v-show="doAll && !use_otherAddr">
     <p style="text-align: center">
     <button class="button is-info is-light" @click="refuseAll" style="width: 280px">Refuse all active checks</button></p>
@@ -52,6 +53,7 @@
     </div>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
+    <p style="font-size: 8px">&nbsp;</p>
     Status: <b>{{cheque.status}}</b>&nbsp;
     Value: <b>{{cheque.amount}} <a :href="cheque.coinURL" target="_blank">{{cheque.coinSymbol}}</a></b>&nbsp;
     <button @click="addToWallet" :id="cheque.coinType" :name="cheque.coinSymbol" style="font-size: 14px">watch {{cheque.coinSymbol}}</button><br>
@@ -221,6 +223,8 @@ export default {
       isLoading: false,
       use_otherAddr: false,
       otherAddr: "",
+      queryTime: "",
+      queried: false,
       chequeList: []
     }
   },
@@ -308,6 +312,8 @@ export default {
       }
       chequeList.sort(function(a,b) {return a.deadline - b.deadline})
       this.chequeNotFound = chequeList.length == 0
+      this.queryTime = (new Date()).toLocaleString("en-US", {hour12: false})
+      console.log("here", this.queried, this.queryTime)
       this.doAll = chequeList.length != 0 && !this.inactiveChequeInstead
       this.chequeList = chequeList
       this.isLoading = false

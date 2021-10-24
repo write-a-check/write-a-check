@@ -19,7 +19,11 @@
     <router-link tag="li" to="/app/donate">donate</router-link><span style="color: #EEEEEE"> | </span>
     <router-link tag="li" to="/app/about">about</router-link>
   </div>
-  <router-view/>
+  <router-view v-slot="{ Component }">
+  <keep-alive>
+    <component :is="Component" />
+  </keep-alive>
+  </router-view>
 </template>
 
 <style>

@@ -98,7 +98,8 @@ window.getSEP20AddrAndSymbol = async function(line) {
 window.timestamp2string = function(timestamp) {
   var t = new Date()
   t.setTime(timestamp)
-  return t.toLocaleString()
+  var s = t.toLocaleString("en-US", {hour12: false})
+  return s.slice(0, s.length-3)
 }
 
 window.uint8ArrayToHex = function(buffer) {
@@ -199,14 +200,10 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
   var totalSec = cheque.deadline - Math.floor(Date.now()/1000)
   if(totalSec > 0) {
     const dayCount = Math.floor(totalSec/(24*3600.0))
-    const hourCount = Math.floor((totalSec-dayCount*24*3600.0)/3600.0)
-    const minuteCount = Math.floor((totalSec-dayCount*24*3600.0-hourCount*3600.0)/60.0)
+    const hourCount = ((totalSec-dayCount*24*3600.0)/3600.0).toFixed(2)
     cheque.remainTime = ""
     if(dayCount > 0) {cheque.remainTime += dayCount+(dayCount==1 ? " Day " : " Days ")}
     if(hourCount > 0) {cheque.remainTime += hourCount+(hourCount==1 ? " Hour " : " Hours ")}
-    if(dayCount == 0 && minuteCount > 0) {
-      cheque.remainTime += minuteCount+(minuteCount==1 ? " Minute" : " Minutes")
-    }
   }
   cheque.hasTag = cheque.passphraseHash.substr(2,2) == "23" // 0x23 is '#'
   cheque.hasPassphrase = !(ethers.BigNumber.from(cheque.passphraseHash).isZero() || cheque.hasTag)
