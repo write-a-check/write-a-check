@@ -12,10 +12,10 @@
     <button class="button is-info is-light" @click="revoke" style="width: 280px">Revoke all expired checks</button>
     </p>
     <template v-for="(cheque, idx) in chequeList" :keys="cheque.id">
-    From: {{cheque.drawer}}&nbsp;&nbsp;&nbsp;Status:&nbsp;<b>{{cheque.status}}</b><br/>
-    Value: <b>{{cheque.amount}} {{cheque.coinSymbol}}</b>({{cheque.coinType}})<br/>
-    Start: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-    Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    To: {{cheque.payee}}<br/>Status:&nbsp;<b>{{cheque.status}}</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    Value: <b>{{cheque.amount}} <a :href="cheque.coinURL" target="_blank">{{cheque.coinSymbol}}</a></b><br/>
+    Start: {{cheque.startTimeStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
+    Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br/>
     <span v-if="cheque.hasTag">Tag: {{cheque.tag}}</span><br>
     <br/>
     </template>
