@@ -48,7 +48,7 @@
     <button class="button is-info is-light" @click="refuseAll" style="width: 280px">Refuse all active checks</button></p>
     <p style="font-size: 8px">&nbsp;</p>
     <p style="text-align: center">
-    <button class="button is-info is-light" @click="acceptAll" style="width: 480px">Accept all active checks without passphrases</button></p>
+    <button class="button is-info is-light" @click="acceptAll" style="width: 480px">Accept all active checks without secret tags</button></p>
     <p style="font-size: 8px">&nbsp;</p>
     </div>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
@@ -56,7 +56,7 @@
     <p style="font-size: 8px">&nbsp;</p>
     Status: <b>{{cheque.status}}</b>&nbsp;
     Value: <b>{{cheque.amount}} <a :href="cheque.coinURL" target="_blank">{{cheque.coinSymbol}}</a></b>&nbsp;
-    <button @click="addToWallet" :id="cheque.coinType" :name="cheque.coinSymbol" style="font-size: 14px">watch {{cheque.coinSymbol}}</button><br>
+    <button @click="addToWallet" :id="cheque.coinType" :data-coinsymbol="cheque.coinSymbol" style="font-size: 14px">watch {{cheque.coinSymbol}}</button><br>
     <span v-show="cheque.hasTag">Tag: {{cheque.tag}}<br></span>
     <span v-show="cheque.hasPassphrase && cheque.status=='active'"><b>You must enter correct secret tag to accept it</b><br></span>
     <span v-show="verboseMode">
@@ -67,12 +67,12 @@
     Deadline: {{cheque.deadlineStr}}&nbsp;&nbsp;
     <span v-show="cheque.status=='active'">({{cheque.remainTime}} left)</span><br/>
     <span v-show="cheque.encryptedMemo" style="white-space: pre-line">Memo:
-    <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" v-bind:name="cheque.encryptedMemo" href="javascript:">
+    <a @click.stop.prevent="decrypt" v-bind:id="cheque.id" :data-encmemo="cheque.encryptedMemo" href="javascript:">
     Click here to decrypt the memo</a><br/></span>
     <span v-show="cheque.clearTextMemo" style="white-space: pre-line">Memo: {{cheque.clearTextMemo}}</span>
     <p v-if="cheque.status=='active' && !use_otherAddr" style="text-align: right">
-    <button class="button" @click="refuse" v-bind:name="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
-    <button class="button is-info" @click="accept" v-bind:name="cheque.id">Accept</button>
+    <button class="button" @click="refuse" :data-chequeid="cheque.id">Refuse</button>&nbsp;&nbsp;&nbsp;&nbsp;
+    <button class="button is-info" @click="accept" :data-chequeid="cheque.id">Accept</button>
     </p>
     <br v-else>
     </template>
@@ -197,6 +197,21 @@ async function getChequeList(myAddr) {
       return chequeList
 }
 
+async function decryptAll(chequeList, privKey) {
+  var elems = document.querySelectorAll('a[data-encmemo]');
+  for(var i=0; i<elems.length; i++) {
+    var target = elems[i]
+    const result = chequeList.filter(cheque => cheque.id == target.id);
+    if(result.length != 1) continue
+    const cheque = result[0]
+
+    var encHex = target.dataset.encmemo
+    const encObj = hexToEncObj(encHex)
+    const decryptedMemo = decryptEncObjWithPrivKey(encObj, privKey)
+    target.parentNode.innerHTML = "Memo: "+decryptedMemo+"<br>"
+  }
+}
+
 export default {
   data() {
     return {
@@ -317,26 +332,26 @@ export default {
       this.doAll = chequeList.length != 0 && !this.inactiveChequeInstead
       this.chequeList = chequeList
       this.isLoading = false
+      if(window.PrivateKeyForEncryption) {
+        setTimeout(function() {
+          decryptAll(chequeList, window.PrivateKeyForEncryption)
+        }, 300);
+      }
     },
-    async decrypt(event) {
-      const result = this.chequeList.filter(cheque => cheque.id == event.target.id);
-      if(result.length != 1) return
-      const cheque = result[0]
-
-      var encHex = event.target.name
-      const encObj = hexToEncObj(encHex)
-      const encObjHex = encodeObjAsHex(encObj)
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const decryptedMemo = await window.ethereum.request({
-        method: 'eth_decrypt',
-        params: [encObjHex, accounts[0]]
-      })
-      
-      event.target.parentNode.innerHTML = "Memo: "+decryptedMemo+"<br>"
+    async decrypt() {
+      var privKey = window.PrivateKeyForEncryption
+      if(!privKey) {
+        privKey = await getPrivateKeyForEncryption()
+        if(privKey === null) {
+          return
+        }
+        window.PrivateKeyForEncryption = privKey 
+      }
+      decryptAll(this.chequeList, privKey)
     },
 
     async accept(event) {
-      const result = this.chequeList.filter(cheque => cheque.id == event.target.name);
+      const result = this.chequeList.filter(cheque => cheque.id == event.target.dataset.chequeid);
       if(result.length != 1) return
       const cheque = result[0]
       const provider = new ethers.providers.Web3Provider(window.ethereum)
@@ -373,7 +388,7 @@ export default {
           type: 'ERC20',
           options: {
             address: event.target.id,
-	    symbol: event.target.name,
+	    symbol: event.target.dataset.coinsymbol,
 	    decimals: decimals,
           },
         },
@@ -384,13 +399,14 @@ export default {
       if(!ok) {
         return
       }
-      const result = this.chequeList.filter(cheque => cheque.id == event.target.name);
+      const result = this.chequeList.filter(cheque => cheque.id == event.target.dataset.chequeid);
       if(result.length != 1) return
       const cheque = result[0]
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      await chequeContract.refuseCheque(cheque.id)
+      const gasPrice = ethers.BigNumber.from("0x3e63fa64")
+      await chequeContract.refuseCheque(cheque.id, {gasPrice: gasPrice})
     },
     async refuseAll() {
       var idList = []
@@ -410,7 +426,8 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      await chequeContract.refuseCheques(idList)
+      const gasPrice = ethers.BigNumber.from("0x3e63fa64")
+      await chequeContract.refuseCheques(idList, {gasPrice: gasPrice})
     },
     async acceptAll() {
       var idList = []
@@ -436,7 +453,8 @@ export default {
       if(referID !== null && referID.length <= 11) {
         passphrase = "0x"+strToHex(referID)
       }
-      await chequeContract.acceptCheques(idList, passphrase)
+      const gasPrice = ethers.BigNumber.from("0x3e63fa64")
+      await chequeContract.acceptCheques(idList, passphrase, {gasPrice: gasPrice})
     },
     async checkAllow() {
       const provider = new ethers.providers.Web3Provider(window.ethereum)

@@ -219,36 +219,44 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
   return cheque
 }
 
-window.getPublicKey = async function() {
-  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+window.getPrivateKeyForEncryption = async function() {
   try {
-    const encryptionPublicKey = await window.ethereum.request({
-      method: 'eth_getEncryptionPublicKey',
-      params: [accounts[0]]
-    })
-    return encryptionPublicKey
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+    const myAddr = await signer.getAddress();
+    const signature = await signer.signMessage("I hereby grant this website the permission to access my checkbook encryption&decryption key for "+myAddr);
+    var privKey = ethers.BigNumber.from(ethers.utils.sha256(signature));
+    const prime = ethers.BigNumber.from("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140");
+    privKey = privKey.mod(prime);
+    return privKey.toHexString().substr(2);
   } catch(e) {
     return null
   }
 }
 
-window.switchAllow = async function(allowed, referee = null) {
+window.switchAllow = async function(allowed, referID = null) {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
       var receipt
       if(allowed) {
-        const key = await getPublicKey()
-        if(key === null) {
-	  alert("Sorry, your wallet does not support encrypt&decrypt API")
+        const privKey = await getPrivateKeyForEncryption()
+        if(privKey === null) {
 	  return
 	}
-        const keyHex = base64ToHex(key)
-	if(referee === null) {
-	  referee = "0x0000000000000000000000000000000000000000"
+	window.PrivateKeyForEncryption = privKey
+        const pubKey = await getEncryptionPublicKeyFromPrivKey(privKey)
+	if(referID === null) {
+	  referID = "0x0000000000000000000000000000000000000000"
 	}
-	console.log("referee",referee)
-        receipt = await chequeContract.setEncryptionPubkey("0x"+keyHex, referee)
+	//console.log("referID",referID, "pubKey", base64ToHex(pubKey))
+	//const encHex = encryptMsgWithKey("hello", pubKey)
+	//console.log("encHex", encHex)
+	//const encObj = hexToEncObj(encHex)
+	//console.log("encObj", encObj)
+	//const decStr = decryptEncObjWithPrivKey(encObj, privKey)
+	//console.log("decStr", decStr)
+        receipt = await chequeContract.setEncryptionPubkey("0x"+base64ToHex(pubKey), referID)
       } else {
         receipt = await chequeContract.unsetEncryptionPubkey()
       }

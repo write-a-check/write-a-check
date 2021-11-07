@@ -6,7 +6,7 @@
     <p v-if="allowed"><b>Currently, you have enabled memo-encryption.
     You can <button class="button is-info is-light" @click="refuse" href="">disable</button> memo-encryption now.</b></p>
     <p v-else><b>Currently, you have not enabled memo-encryption and all the memos to you must be clear text.
-    You can <button class="button is-info is-light" @click="allow" href="">enable</button> memo-encryption now, if you are using MetaMask extension in a browser.</b></p>
+    You can <button class="button is-info is-light" @click="allow" href="">enable</button> memo-encryption now.</b></p>
     <p v-show="myAddress">Your current account is<br>${{myAddress}}.</p>
     <p v-show="referLink">This account has a bonded refer link, which is<br><a :href="referLink"><code style="color: blue;">{{referLink}}</code></a></p>
     <p v-show="myAddress && !referLink">You do not have a refer link, because your account never sent any transactions.</p>
@@ -87,7 +87,9 @@ export default {
       if(storedReferee !== null) {
         referID = storedReferee
       }
-      switchAllow(true, referID)
+      const refer = ethers.utils.hexZeroPad("0x"+strToHex(referID), 20)
+      console.log("refer", referID, refer)
+      switchAllow(true, refer)
     },
     async refuse() {
       switchAllow(false)

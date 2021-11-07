@@ -5,7 +5,9 @@
    <p>The community has donated a large amount of $CATS to this airdrop project, and after some airdrop events, now we still have {{totalDonation}} $CATS remained. <a href="https://www.checkbook.cash/donations.html">Here</a> is a full list of donations, which is periodically updated.</p>
    <table style="margin: auto; border-spacing: 15px;">
    <tr><td><b>Receiver of Donation:</b><br/>
-   0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41</td></tr>
+   {{receipt}}</td></tr>
+   <tr><td><b>The cold wallet for Donation:</b><br/>
+   {{coldWallet}}</td></tr>
    <tr><td><b>Amount to Donate:</b>
    <input v-model="amount" type="number" class="userinput" placeholder="Please enter a number"></td></tr>
    <tr><td><b>Your name (optional):</b>
@@ -102,6 +104,7 @@ export default {
     return {
       coinType: "0x265bD28d79400D55a1665707Fa14A72978FA6043",
       receipt: "0x05dd8925dbeF0aeCeC5B68032A0691076A92Ea41",
+      coldWallet: "0xA08C722701A5A430267Db229Db12bb8f3A8f76c1",
       totalDonation: 0,
       donations: [],
       amount: 0,
@@ -167,22 +170,30 @@ export default {
       this.donations = []
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
-      const balanceAmt = await sep20Contract.balanceOf(this.receipt)
+      var balanceAmt = await sep20Contract.balanceOf(this.receipt)
       const decimals = await sep20Contract.decimals()
-      this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
+      this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)*1.0
+      console.log("totalDonation", this.totalDonation)
+      var balanceAmt = await sep20Contract.balanceOf(this.coldWallet)
+      this.totalDonation += ethers.utils.formatUnits(balanceAmt, decimals)*1.0
+      console.log("totalDonation", this.totalDonation)
       this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
       this.isLoading = false
     }
   },
   async mounted() {
     this.isLoading = true
-    const provider = new ethers.providers.Web3Provider(window.ethereum)
-    const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
-    const balanceAmt = await sep20Contract.balanceOf(this.receipt)
-    const decimals = await sep20Contract.decimals()
-    this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)
-    this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
-    this.isLoading = false
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const sep20Contract = new ethers.Contract(this.coinType, SEP20ABI, provider)
+      var balanceAmt = await sep20Contract.balanceOf(this.receipt)
+      const decimals = await sep20Contract.decimals()
+      this.totalDonation = ethers.utils.formatUnits(balanceAmt, decimals)*1.0
+      console.log("totalDonation", this.totalDonation)
+      var balanceAmt = await sep20Contract.balanceOf(this.coldWallet)
+      this.totalDonation += ethers.utils.formatUnits(balanceAmt, decimals)*1.0
+      console.log("totalDonation", this.totalDonation)
+      this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
+      this.isLoading = false
   }
 }
 </script>

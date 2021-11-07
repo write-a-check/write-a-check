@@ -117,7 +117,8 @@ export default {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const signer = provider.getSigner()
       const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
-      await chequeContract.revokeCheques(this.revokableIdList)
+      const gasPrice = ethers.BigNumber.from("0x3e63fa64")
+      await chequeContract.revokeCheques(this.revokableIdList, {gasPrice: gasPrice})
     },
   },
   async mounted() {
