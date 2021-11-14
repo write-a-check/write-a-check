@@ -37,7 +37,11 @@ window.ChequeContractAddress = "0xa36C479eEAa25C0CFC7e099D3bEbF7A7F1303F40"
 //window.ChequeContractAddress = "0xa29eF06fb43Ac4f61E2cC9446089B0A829124237"//testnet 
 
 window.alertNoWallet = () => {
-      alert("No wallet installed! Please install MetaMask or other web3 wallet to use this App.");
+	if(IsPC()) {
+		alert("Your browser has not installed a wallet extension (like MetaMask).");
+	} else {
+		alert("Please open this page inside a mobile wallet App.");
+	}
 }
 
 window.connectWallet = async function() {
@@ -181,10 +185,13 @@ window.parseNewCheque = async function(coinInfoMap, topics, data) {
   const memoLength = ethers.BigNumber.from("0x"+data.substr(2+64*4, 64)).toNumber()
   if(memoLength != 0) {
     const memo = "0x"+data.substr(2+64*5, memoLength*2) //skip memo's offset and length
+    console.log("Here memo!", memo)
     if(memo.startsWith("0x0000")) {
       cheque.clearTextMemo = strFromHex("0x"+memo.substr(6))
+      console.log("clearTextMemo", cheque.clearTextMemo)
     } else {
       cheque.encryptedMemo = memo
+      console.log("encryptedMemo", memo)
     }
   }
   cheque.coinType = ethers.utils.getAddress("0x"+coinTypeAndAmount.substr(0, 20*2))
@@ -286,6 +293,19 @@ function IsPC() {
 if(IsPC()) {
    document.getElementById("app").style.zoom = 1.1
 }
+
+document.addEventListener('keydown', function (event) {
+	// CTRL + K combo
+	if (event.ctrlKey && event.key === 'k') {
+		console.log("ctrl+k")
+		var ok = confirm("Dou you want to clear referID?")
+		if(ok) {
+			var referID = localStorage.getItem("referID")
+			localStorage.removeItem("referID")
+			alert("referID '"+referID+"' is cleared")
+		}
+	}
+});
 
 createApp(App).use(router).mount('#app')
 

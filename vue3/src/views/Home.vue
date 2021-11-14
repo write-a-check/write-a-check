@@ -7,9 +7,11 @@
     You can <button class="button is-info is-light" @click="refuse" href="">disable</button> memo-encryption now.</b></p>
     <p v-else><b>Currently, you have not enabled memo-encryption and all the memos to you must be clear text.
     You can <button class="button is-info is-light" @click="allow" href="">enable</button> memo-encryption now.</b></p>
+    <!--
     <p v-show="myAddress">Your current account is<br>${{myAddress}}.</p>
     <p v-show="referLink">This account has a bonded refer link, which is<br><a :href="referLink"><code style="color: blue;">{{referLink}}</code></a></p>
     <p v-show="myAddress && !referLink">You do not have a refer link, because your account never sent any transactions.</p>
+    -->
     <hr>
     <p>Why do we design such a DApp? Because we believe some features of paper checks can be borrowed to enrich the methods for airdropping. First of all, here is a Notification Center of airdrops. There are so many SEP20 tokens, and when somebody send you an unknown token, you are not even aware of that! However, if all the airdropped tokens are sent through cheques, you can find them all here.</p>
     <p>Second, cheques have deadlines. The payees must accept the cheques before the deadline, or the cheques can be revoked by the payer. If the payees are not interested, the payer can take back the tokens in expired cheques. Thus, no tokens are wasted.</p>
@@ -114,10 +116,10 @@ export default {
     const provider = new ethers.providers.Web3Provider(window.ethereum)
     const signer = provider.getSigner()
     this.myAddress = await signer.getAddress()
-    const nonce = await provider.getTransactionCount(this.myAddress)
-    if(nonce != 0) {
-      this.referLink = "https://www.checkbook.cash/app/?r="+hexToReferID(this.myAddress.substr(2,22))
-    }
+    //const nonce = await provider.getTransactionCount(this.myAddress)
+    //if(nonce != 0) {
+    //  this.referLink = "https://checkbook.cash/app/?r="+hexToReferID(this.myAddress.substr(2,22))
+    //}
     const chequeContract = new ethers.Contract(ChequeContractAddress, ChequeABI, provider).connect(signer)
     try {
       const encPubkey = await chequeContract.encryptionPubkeys(this.myAddress)

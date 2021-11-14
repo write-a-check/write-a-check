@@ -40,6 +40,7 @@
     <hr/>
 
     <p v-show="isLoading" style="text-align: center"><img src="/loading.gif"></p>
+    <p style="font-size: 26px; text-align: center" v-show="showWelcome"><br><a href="https://brucelee.cash/2021/11/05/receivecheck" target="_blank">How to get my first check?</a></p>
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
     <p v-show="queryTime.length!=0">(The following list was updated on {{queryTime}})</p>
@@ -194,6 +195,7 @@ async function getChequeList(myAddr) {
 	  cheque.status = "refused"
 	}
       }
+      console.log("get chequeList", chequeList)
       return chequeList
 }
 
@@ -240,6 +242,7 @@ export default {
       otherAddr: "",
       queryTime: "",
       queried: false,
+      showWelcome: true,
       chequeList: []
     }
   },
@@ -252,6 +255,7 @@ export default {
       if(!connectWallet()) {
         return
       }
+      this.showWelcome = false
       //this.checkAllow()
       var sep20Addr, symbol
       if(this.filter_sep20Address) {
@@ -330,6 +334,7 @@ export default {
       this.queryTime = (new Date()).toLocaleString("en-US", {hour12: false})
       console.log("here", this.queried, this.queryTime)
       this.doAll = chequeList.length != 0 && !this.inactiveChequeInstead
+      console.log(chequeList)
       this.chequeList = chequeList
       this.isLoading = false
       if(window.PrivateKeyForEncryption) {
@@ -371,7 +376,7 @@ export default {
 	}
       } else {
         const referID = localStorage.getItem("referID")
-        if(referID !== null && referID.length <= 11) {
+        if(referID !== null && referID.length <= 13) {
           passphrase = "0x"+strToHex(referID)
         }
       }
@@ -450,7 +455,7 @@ export default {
       console.log("idList", idList)
       var passphrase = "0x"
       const referID = localStorage.getItem("referID")
-      if(referID !== null && referID.length <= 11) {
+      if(referID !== null && referID.length <= 13) {
         passphrase = "0x"+strToHex(referID)
       }
       const gasPrice = ethers.BigNumber.from("0x3e63fa64")
