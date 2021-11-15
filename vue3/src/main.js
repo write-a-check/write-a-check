@@ -298,9 +298,9 @@ document.addEventListener('keydown', function (event) {
 	// CTRL + K combo
 	if (event.ctrlKey && event.key === 'k') {
 		console.log("ctrl+k")
-		var ok = confirm("Dou you want to clear referID?")
+		var referID = localStorage.getItem("referID")
+		var ok = confirm("You current referID is '"+referID+"'. Dou you want to clear it?")
 		if(ok) {
-			var referID = localStorage.getItem("referID")
 			localStorage.removeItem("referID")
 			alert("referID '"+referID+"' is cleared")
 		}

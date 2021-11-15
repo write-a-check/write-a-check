@@ -520,6 +520,9 @@ export default {
     if(cfg) {
       this.hashtag = cfg
     }
+    if(this.$route.query.autolist) {
+      this.list()
+    }
   }
 }
 </script>
