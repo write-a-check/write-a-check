@@ -43,13 +43,15 @@
     <p style="font-size: 26px; text-align: center" v-show="showWelcome"><br><a href="https://brucelee.cash/2021/11/05/receivecheck" target="_blank">How to get my first check?</a></p>
     <p v-show="inactiveChequeInstead"><b>Found no active cheques, some old inactive cheques are shown below:</b></p>
     <p v-show="chequeNotFound">No cheque found</p>
-    <p v-show="queryTime.length!=0">(The following list was updated on {{queryTime}})</p>
     <div v-show="doAll && !use_otherAddr">
     <p style="text-align: center">
     <button class="button is-info is-light" @click="refuseAll" style="width: 280px">Refuse all active checks</button></p>
     <p style="font-size: 8px">&nbsp;</p>
     <p style="text-align: center">
     <button class="button is-info is-light" @click="acceptAll" style="width: 480px">Accept all active checks without secret tags</button></p>
+    <p style="font-size: 8px">&nbsp;</p>
+    <p v-show="countDownStr.length!=0" style="text-align: center; font-weight: bold">One of your checks will get expired in<br>{{countDownStr}}.</p>
+    <p v-show="queryTime.length!=0">(The following list was updated on {{queryTime}})</p>
     <p style="font-size: 8px">&nbsp;</p>
     </div>
     <p v-show="showTotalCoins">Totally there are {{totalCoins}} {{coinSymbol}} waiting for your acceptance.</p>
@@ -243,6 +245,7 @@ export default {
       queryTime: "",
       queried: false,
       showWelcome: true,
+      countDownStr: "",
       chequeList: []
     }
   },
@@ -250,6 +253,30 @@ export default {
     toggle() {
       this.showOptions = !this.showOptions
       this.toggleBtnText = this.showOptions? "➖ Hide Options" : "➕ Show Options"
+    },
+    startCountDown(chequeList) {
+      var countDownDate = 10000000000000000.0 // a very large value
+      for(var i=0; i<chequeList.length; i++) {
+        if(countDownDate > chequeList[i].deadline) {
+          countDownDate = chequeList[i].deadline
+	}
+      }
+      window.CountDownDate = countDownDate
+      console.log("countDownDate", countDownDate)
+      this.showCountDown()
+      window.DeadlineCountDown = setInterval(this.showCountDown, 1000) //Update the count down every 1 second
+    },
+    showCountDown() {
+      var now = Math.floor(Date.now()/1000)
+      
+      var distance = window.CountDownDate - now
+      
+      var days = Math.floor(distance / (60 * 60 * 24));
+      var hours = Math.floor((distance % (60 * 60 * 24)) / (60 * 60));
+      var minutes = Math.floor((distance % (60 * 60)) / 60);
+      var seconds = Math.floor(distance % 60);
+      
+      this.countDownStr = days + " day " +hours + " hr " + minutes + " min " + seconds + " sec";
     },
     async list() {
       if(!connectWallet()) {
@@ -308,6 +335,12 @@ export default {
 	"onlyActive": this.onlyActive
       }
       var chequeList =  filterCheques(chequeList0, cfg)
+      if(chequeList.length != 0 && cfg.onlyActive) {
+        this.startCountDown(chequeList)
+      } else {
+        this.countDownStr = ""
+        clearInterval(window.DeadlineCountDown)
+      }
       if(chequeList.length == 0 && cfg.onlyActive) {
         cfg.onlyActive = false
         chequeList =  filterCheques(chequeList0, cfg)
