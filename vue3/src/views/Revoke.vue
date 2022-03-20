@@ -110,6 +110,11 @@ export default {
         alert("Cannot find expired checks")
 	return
       } else if(this.revokableIdList.length > 50) {
+	console.log("start")
+	for(var i=0; i<this.revokableIdList.length; i++) {
+	  console.log(this.revokableIdList[i])
+	}
+	console.log("end")
         alert("Too many cheques to revoke. We can just refuse the first 50 cheques.")
 	this.revokableIdList = this.revokableIdList.slice(0, 50)
       }

@@ -51,7 +51,7 @@ function hex2arr(s) {
   return u8arr
 }
 
-async function getDonations(coinType, receipt, provider, maxCount) {
+async function getDonations(coinType, receipt, provider, maxCount, coldWallet) {
 	var toBlock = await provider.getBlockNumber()
 	var filter = {
 		address: coinType,
@@ -71,7 +71,7 @@ async function getDonations(coinType, receipt, provider, maxCount) {
 		for(var i=logs.length-1; i>=0; i--) {
 			const tx = await provider.getTransaction(logs[i].transactionHash)
 			const amount = ethers.BigNumber.from("0x"+tx.data.substr((4+32)*2+2, 64))
-			if(tx.from == receipt) {
+			if(tx.from == receipt || tx.from == coldWallet) {
 				continue
 			}
 			var entry = {
@@ -177,7 +177,7 @@ export default {
       var balanceAmt = await sep20Contract.balanceOf(this.coldWallet)
       this.totalDonation += ethers.utils.formatUnits(balanceAmt, decimals)*1.0
       console.log("totalDonation", this.totalDonation)
-      this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
+      this.donations = await getDonations(this.coinType, this.receipt, provider, 10, this.coldWallet)
       this.isLoading = false
     }
   },
@@ -192,7 +192,7 @@ export default {
       var balanceAmt = await sep20Contract.balanceOf(this.coldWallet)
       this.totalDonation += ethers.utils.formatUnits(balanceAmt, decimals)*1.0
       console.log("totalDonation", this.totalDonation)
-      this.donations = await getDonations(this.coinType, this.receipt, provider, 10)
+      this.donations = await getDonations(this.coinType, this.receipt, provider, 10, this.coldWallet)
       this.isLoading = false
   }
 }
